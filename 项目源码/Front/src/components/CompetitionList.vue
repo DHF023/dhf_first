@@ -14,7 +14,7 @@
           <el-table-column prop="title" label="比赛名称" width="260">
             <!-- 自定义显示比赛名称的模板 -->
             <template v-slot="scope">
-              <router-link :to="'/competition/' + scope.row.id" class="title-link">{{ scope.row.title }}</router-link>
+              <a href="javascript:void(0);" @click="openCompetitionDetail(scope.row.id)" class="title-link">{{ scope.row.title }}</a>
             </template>
           </el-table-column>
           <el-table-column prop="startDate" label="开始时间" width="200"></el-table-column>
@@ -28,7 +28,7 @@
           <!-- 自定义显示榜单链接的模板 -->
           <el-table-column fixed="right" prop="rank" label="榜单">
             <template v-slot="scope">
-              <router-link :to="'/rank/' + scope.row.id" class="rank-link">查看</router-link>
+              <a :href="'/competition/' + scope.row.id + '/rank'" target="_blank" class="rank-link">查看</a>
             </template>
           </el-table-column>
         </el-table>
@@ -50,7 +50,7 @@
 
 
 <script>
-import {competition} from "@/data/competition";
+import {competition} from "@/data/competition.js";
 export default {
   name: 'competition',
   data() {
@@ -68,10 +68,9 @@ export default {
       const property = column['property'];
       return row[property] === value;
     },
-    // 未实现的点击事件处理方法
-    handleClick() {
-
-
+    openCompetitionDetail(competitionId) {
+      const url = `/competition/${competitionId}`;
+      window.open(url, '_blank'); // 在新窗口中打开该URL
     }
   }
 }

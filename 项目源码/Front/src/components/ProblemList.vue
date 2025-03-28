@@ -12,7 +12,7 @@
           <el-table-column prop="id" label="编号" width="100"></el-table-column>
           <el-table-column prop="title" label="题目名称" width="300">
             <template v-slot="scope">
-              <router-link :to="'/problem/' + scope.row.id" class="title-link">{{ scope.row.title }}</router-link>
+              <a href="javascript:void(0);" @click="openProblemDetail(scope.row.id)" class="title-link">{{ scope.row.title }}</a>
             </template>
           </el-table-column>
           <el-table-column prop="tag" label="标签">
@@ -122,6 +122,10 @@ export default {
         // 更新下一个单词的起始位置
         currentX += wordWidth + padding;
       });
+    },
+    openProblemDetail(problemId) {
+      const url = `/problem/${problemId}`; // 确保这是Problem.vue组件所对应的路由
+      window.open(url, '_blank'); // 在新窗口中打开该URL
     }
   }
 };

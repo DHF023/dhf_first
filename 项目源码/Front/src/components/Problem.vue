@@ -15,18 +15,14 @@
         <!--边栏打开状态-->
         <div v-if="isSidebarCollapsed === false">
           <div style="width: 100%; height: 30px; display: flex; align-items: center;">
-            <el-breadcrumb separator="/" style="margin-left: 10px; font-size: 16px; width: 180px;">
-              <el-breadcrumb-item :to="{ path: '/problem-list' }">题库</el-breadcrumb-item>
-              <el-breadcrumb-item>{{ problem.title }}</el-breadcrumb-item>
-            </el-breadcrumb>
             <el-button class="toggle-button" style="margin-left: 10px;" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-left" style="color: #4c4c4c;"></i>
             </el-button>
           </div>
           <el-divider class="divider"></el-divider>
-          <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === false">提交答案</el-button>
-          <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === true">返回题目</el-button>
-          <el-button type="primary" size="medium" class="goto-button" @click="gotoRecord">提交记录</el-button>
+          <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === false" round>提交答案</el-button>
+          <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === true" round>返回题目</el-button>
+          <el-button type="primary" size="medium" class="goto-button" @click="dialogVisible = true" round>提交记录</el-button>
         </div>
       </div>
     </div>
@@ -133,16 +129,32 @@
           </el-tabs>
         </div>
     </div>
+
+    <el-dialog
+      title="提交记录"
+      :visible.sync="dialogVisible"
+      top="0"
+    >
+      <div class="dialog-content">
+        <el-table :data="record" class="table" height="100%">
+          <el-table-column prop="state" label="状态"></el-table-column>
+          <el-table-column prop="id" label="编号"></el-table-column>
+          <el-table-column prop="title" label="题目"></el-table-column>
+          <el-table-column prop="time" label="完成时间"></el-table-column>
+          <el-table-column prop="num" label="提交次数"></el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import  MonacoEditor from '@/views/MonacoEditor.vue'
 import { languages } from "@/data/languages.js";
+import { records } from "@/data/records";
 
 export default {
   name: 'problem',
-  props: ['id'],
   data() {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
@@ -161,10 +173,14 @@ export default {
         language: 'javascript', // 语言类型
         theme: 'vs' // 编辑器主题
       },
-      fileList: [{name: '', url: ''}],
       isSubmit: false,
       isSidebarCollapsed: false,
+      dialogVisible: false,
+      record: records,
     }
+  },
+  created() {
+    this.id = this.$route.params.id; // 从路由参数中获取题目ID
   },
   computed: {
     problem() {
@@ -178,9 +194,6 @@ export default {
   methods: {
     Submit() {
       this.isSubmit = !this.isSubmit;
-    },
-    gotoRecord() {
-      this.$router.push({ name: 'Record', params: { id: this.id } });
     },
     handleClick(tab, event) {
       console.log(tab, event);
@@ -272,7 +285,6 @@ export default {
   border: none;
   width: 50px;
   height: 30px;
-  float: right;
 }
 
 .divider {
@@ -289,5 +301,30 @@ export default {
   height: 40px;
   margin-top: 20px;
   margin-left: 20px;
+}
+
+.dialog-content {
+  height: 80vh; /* 占据对话框的全部高度 */
+  overflow: auto; /* 启用垂直滚动条 */
+  padding: 10px; /* 添加内边距，使内容不贴边 */
+}
+.dialog-content::-webkit-scrollbar {
+  display: none;
+}
+
+::v-deep(.el-dialog__wrapper) {
+  position: fixed; /* 固定定位 */
+  right: 0; /* 右侧对齐 */
+  top: 20px; /* 假设导航栏高度为60px，根据实际情况调整 */
+  height: 100vh; /* 高度设置为视口高度的90% */
+  overflow: hidden; /* 隐藏对话框本身的滚动条，滚动将由内部内容控制 */
+  transition: transform 0.3s ease; /* 添加过渡效果，使对话框滑出更平滑 */
+}
+::v-deep(.el-dialog__body) {
+  height: 85vh; /* 使对话框高度充满整个对话框容器 */
+}
+
+::v-deep(.el-table__body-wrapper) {
+  scrollbar-width: none;
 }
 </style>

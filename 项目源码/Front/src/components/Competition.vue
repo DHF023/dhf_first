@@ -3,92 +3,64 @@
     <div class="main">
       <!-- 标题部分 -->
       <div class="header">
-        <span style="line-height: 60px; font-size: 24px; font-weight: bold;">{{competition.title }}</span>
+        <span style="line-height: 60px; font-size: 24px; font-weight: bold;">{{ competition.title }}</span>
       </div>
       <!-- 按钮区域 -->
       <div style="display: flex; justify-content: center;">
-        <el-button type="text" @click="gotoList" class="text-button"><span style="color: #000000; font-size: 14px;">题目列表</span></el-button>
-        <el-button type="text" @click="gotoRecord" class="text-button"><span style="color: #000000; font-size: 14px;">所有提交</span></el-button>
-        <el-button type="text" @click="gotoRank" class="text-button"><span style="color: #000000; font-size: 14px;">榜单</span></el-button>
+        <el-button type="text" @click="navigateTo('List')" :class="{ 'text-button': true, 'active-button': isListActive }">
+          <span style="color: #000000; font-size: 14px;">题目列表</span>
+        </el-button>
+        <el-button type="text" @click="navigateTo('Record')" :class="{ 'text-button': true, 'active-button': isRecordActive }">
+          <span style="color: #000000; font-size: 14px;">所有提交</span>
+        </el-button>
+        <el-button type="text" @click="navigateTo('Rank')" :class="{ 'text-button': true, 'active-button': isRankActive }">
+          <span style="color: #000000; font-size: 14px;">榜单</span>
+        </el-button>
       </div>
-      <!-- 题目列表显示部分 -->
-      <div v-if="isList === true">
-        <div style="display: flex; justify-content: center;">
-          <div class="table">
-            <el-table :data="competitionProblems" border>
-              <el-table-column prop="id" label="#" width="130"></el-table-column>
-              <el-table-column prop="title" label="标题">
-                <!-- 题目链接 -->
-                <template v-slot="scope">
-                  <router-link :to="'/competition-problem/' + scope.row.id" class="title-link">{{ scope.row.title }}</router-link>
-                </template>
-              </el-table-column>
-              <el-table-column prop="num" label="已解出" width="130"></el-table-column>
-            </el-table>
-          </div>
-        </div>
-        <!-- 竞赛信息展示 -->
-        <div style="margin: 0 100px;">
-          <span style="line-height: 15px;">
-            时长: {{ competition.time }}<br>
-            开始时间: {{ competition.startDate }}
-          </span>
-        </div>
-      </div>
-      <!-- 所有提交显示区域 -->
-      <div style="display: flex; justify-content: center;" v-if="isRecord === true">
-        <!-- 所有提交显示区域 -->
-      </div>
-      <!-- 榜单显示区域 -->
-      <div style="display: flex; justify-content: center;" v-if="isRank === true">
-        <!-- 榜单显示区域 -->
-      </div>
+      <!-- 路由视图，用于渲染子组件 -->
+      <router-view></router-view>
     </div>
-
-
-
-
   </div>
 </template>
 
-
 <script>
-import { competitionProblems } from "@/data/competition-problems.js";
-
+import { competition } from "@/data/competition.js";
 
 export default {
-  name: 'competition',
-  props: ['id'],
+  name: 'Competition',
   data() {
     return {
-      competitionProblems: competitionProblems,
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-      isList: true,
-      isRecord: false,
-      isRank: false,
+      id: this.$route.params.id ? String(this.$route.params.id) : '', // 确保 id 是字符串，或提供一个默认值
     };
   },
   computed: {
     competition() {
-      const competition = require('@/data/competition.js').competition;
+      // 确保根据id从数据源中获取比赛详情
       return competition.find(c => c.id === this.id);
     },
+    currentRouteName() {
+      return this.$route.name; // 获取当前路由的名称
+    },
+    isListActive() {
+      return this.currentRouteName === 'List';
+    },
+    isRecordActive() {
+      return this.currentRouteName === 'Record';
+    },
+    isRankActive() {
+      return this.currentRouteName === 'Rank';
+    }
   },
   methods: {
-    gotoList() {
-      this.isList = true;
-      this.Record = false;
-      this.isRank = false;
+    navigateTo(routeName) {
+      this.$router.push({ name: routeName, params: { id: this.id } });
     },
-    gotoRecord() {
-      this.isList = false;
-      this.Record = true;
-      this.isRank = false;
-    },
-    gotoRank() {
-      this.isList = false;
-      this.Record = false;
-      this.isRank = true;
+  },
+  watch: {
+    // 监听路由变化，更新id
+    '$route'(to) {
+      this.id = to.params.id;
     }
   }
 };
@@ -121,19 +93,12 @@ export default {
 }
 
 
-.table {
-  width: 80%;
-  margin: 30px 0;
-}
-
-
-.title-link {
-  text-decoration: none; /* 去掉下划线 */
-  color: #dba800; /* 更改字体颜色，这里以绿色为例 */
-}
-
-
 .text-button:hover {
+  font-weight: bold;
+}
+
+
+.active-button span {
   font-weight: bold;
 }
 </style>
