@@ -3,7 +3,7 @@
     <!-- 忘记密码框的容器 -->
     <div class="forget-password-container">
       <!-- 忘记密码框的标题 -->
-      <div class="forget-password-title">找 回 密 码</div>
+      <div class="forget-password-title">忘 记 密 码</div>
       <!-- 忘记密码表单的容器 -->
       <div class="forget-password-form-container">
         <!-- 忘记密码表单 -->
@@ -61,17 +61,29 @@ export default {
   methods: {
     // 发送验证码到邮箱
     sendVerificationCode() {
-      // 这里需要调用后端API发送验证码
-      // 例如: request.post("/send-verification-code", { identifier: this.forgetPasswordForm.identifier })
-      this.$message({
-        message: '验证码已发送，请注意查收',
-        type: 'info'
-      });
+      request.post("/admin/sendVerificationCode", { email: this.forgetPasswordForm.identifier })
+          .then(response => {
+            if (response.data.code === 0) { // 假设成功时code为0
+              this.$message({
+                message: '验证码已发送，请注意查收',
+                type: 'info'
+              });
+            } else {
+              this.$message({
+                message: response.data.message, // 显示后端返回的错误信息
+                type: 'error'
+              });
+            }
+          })
+          .catch(error => {
+            this.$message({
+              message: '发送验证码失败，请稍后重试',
+              type: 'error'
+            });
+          });
     },
     // 重置密码
     resetPassword() {
-      // 这里需要调用后端API重置密码
-      // 例如: request.post("/reset-password", this.forgetPasswordForm)
       if (this.forgetPasswordForm.newPassword !== this.forgetPasswordForm.confirmPassword) {
         this.$message({
           message: '两次输入的密码不一致',
@@ -79,13 +91,31 @@ export default {
         });
         return;
       }
-      // 假设重置密码成功
-      this.$message({
-        message: '密码重置成功，请登录',
-        type: 'success'
-      });
-      // 跳转到登录页面
-      this.$router.push("/login");
+
+      request.post("/admin/resetPassword", {
+        email: this.forgetPasswordForm.identifier,
+        newPassword: this.forgetPasswordForm.newPassword
+      })
+          .then(response => {
+            if (response.data.code === 0) { // 假设成功时code为0
+              this.$message({
+                message: '密码重置成功，请登录',
+                type: 'success'
+              });
+              this.$router.push("/login");
+            } else {
+              this.$message({
+                message: response.data.message, // 显示后端返回的错误信息
+                type: 'error'
+              });
+            }
+          })
+          .catch(error => {
+            this.$message({
+              message: '密码重置失败，请稍后重试',
+              type: 'error'
+            });
+          });
     },
     // 导航到登录页面
     navLogin() {
@@ -94,7 +124,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .forget-password-container {
@@ -120,7 +149,6 @@ export default {
   margin-left: 40px;
   margin-right: 40px;
 }
-
 
 .verification-code-item .input-field {
   width: 70%; /* 验证码输入框宽度调整 */

@@ -14,8 +14,8 @@
 
         <!--边栏打开状态-->
         <div v-if="isSidebarCollapsed === false">
-          <div style="width: 100%; height: 30px; display: flex; align-items: center;">
-            <el-button class="toggle-button" style="margin-left: 10px;" @click="toggleSidebar" plain>
+          <div class="toggle-button-container">
+            <el-button class="toggle-button" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-left" style="color: #4c4c4c;"></i>
             </el-button>
           </div>
@@ -33,11 +33,23 @@
           <el-header style="height: 60px; display: flex;">
             <h2 style="width: 50%">{{ id }} {{ problem.title }}</h2>
           </el-header>
+          <el-row style="margin: 10px 0; padding: 0 20px; display: flex; align-items: center;">
+            <!-- 难度标签 -->
+            <el-tag :type="difficultyTagType" effect="dark" style="border-radius: 20px; margin-right: 10px;">
+              {{ problem.difficulty }}
+            </el-tag>
+            <!-- 标签列表 -->
+            <el-tag
+                v-for="tag in problem.tags"
+                :key="tag"
+                type="info"
+                effect="dark"
+                style="border-radius: 20px; margin-right: 5px;"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-row>
           <el-main style="margin-bottom: 30px;">
-            <h2>题目背景</h2>
-            <div>
-              <p>这是题目背景</p>
-            </div>
             <h2>题目描述</h2>
             <div>
               <p>这是题目描述</p>
@@ -187,6 +199,18 @@ export default {
       const problems = require('@/data/problems.js').problems;
       return problems.find(p => p.id === this.id);
     },
+    difficultyTagType() {
+      switch (this.problem.difficulty) {
+        case '简单':
+          return 'success';
+        case '中等':
+          return 'warning';
+        case '困难':
+          return 'danger';
+        default:
+          return '';
+      }
+    }
   },
   components: {
     MonacoEditor
@@ -326,5 +350,15 @@ export default {
 
 ::v-deep(.el-table__body-wrapper) {
   scrollbar-width: none;
+}
+
+
+.left-part .toggle-button-container {
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 使按钮靠右对齐 */
+  padding-right: 10px; /* 可选，根据需要添加右侧内边距 */
 }
 </style>

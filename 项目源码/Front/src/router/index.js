@@ -19,8 +19,15 @@ import QACenter from '@/components/QACenter.vue';
 import PersonalCenter from "@/components/PersonalCenter";
 import UpdatePassword from "@/components/UpdataPassword";
 import Homework from "@/components/Homework";
+import NewHomeworkPage from "@/components/NewHomeworkPage";
+import NewHomeworkPageAuto from "@/components/NewHomeworkPageAuto";
 import Examination from "@/components/Examination";
-
+import NewExaminationPage from "@/components/NewExaminationPage";
+import NewExaminationPageAuto from "@/components/NewExaminationPageAuto";
+import NewCompetitionPage from "@/components/NewCompetitionPage";
+import NewCompetitionPageAuto from "@/components/NewCompetitionPageAuto";
+import AddSingleProblem from '@/components/AddSingleProblem.vue';
+import AddBatchProblems from '@/components/AddBatchProblems.vue';
 
 Vue.use(VueRouter);
 
@@ -93,10 +100,9 @@ const routes = [
         ]
       },
       {
-        path: '/competition-problem/:id',
-        name: 'CompetitionProblemDetail',
-        component: CompetitionProblem,
-        props: true
+        path: '/competition/:contestId/competition-problem/:problemId',
+        name: 'CompetitionProblem',
+        component: CompetitionProblem
       },
       {
         path: '/progress-tracking',
@@ -129,10 +135,50 @@ const routes = [
         component: Homework,
       },
       {
+        path: '/new-homework-page',
+        name: 'NewHomeworkPage',
+        component: NewHomeworkPage,
+      },
+      {
+        path: '/new-homework-page-auto',
+        name: 'NewHomeworkPageAuto',
+        component: NewHomeworkPageAuto,
+      },
+      {
         path: '/examination',
         name: 'Examination',
         component: Examination,
-      }
+      },
+      {
+        path: '/new-examination-page',
+        name: 'NewExaminationPage',
+        component: NewExaminationPage,
+      },
+      {
+        path: '/new-examination-page-auto',
+        name: 'NewExaminationPageAuto',
+        component: NewExaminationPageAuto,
+      },
+      {
+        path: '/new-competition-page',
+        name: 'NewCompetitionPage',
+        component: NewCompetitionPage,
+      },
+      {
+        path: '/new-competition-page-auto',
+        name: 'NewCompetitionPageAuto',
+        component: NewCompetitionPageAuto,
+      },
+      {
+        path: '/add-single-problem',
+        name: 'AddSingleProblem',
+        component: AddSingleProblem,
+      },
+      {
+        path: '/add-batch-problems',
+        name: 'AddBatchProblems',
+        component: AddBatchProblems,
+      },
     ]
   },
 ]

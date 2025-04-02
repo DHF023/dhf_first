@@ -2,7 +2,7 @@
   <div class="homework">
     <div class="main">
       <div class="toolbar">
-        <el-button class="new-homework-btn" round @click="dialogVisible = true">
+        <el-button class="new-homework-btn" round @click="dialogVisible = true" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN' ">
           <span class="new-homework-text">新建作业</span>
         </el-button>
 
@@ -39,12 +39,17 @@ export default {
     return {
       dialogVisible: false,
       isAuto: '',
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
     }
   },
   methods: {
     goToNewPage() {
-      this.dialogVisible = false; // 关闭对话框
-      window.open('localhost:8081/homework/new-homework-page', '_blank'); // 打开新的浏览器标签页
+      this.dialogVisible = false;
+      if (this.isAuto === '手动创建作业') {
+        this.$router.push('/new-homework-page');
+      } else if (this.isAuto === '自动随机出题') {
+        this.$router.push('/new-homework-page-auto');
+      }
     },
   },
 }
@@ -75,7 +80,6 @@ export default {
   background-color: #829aff;
   border: #829aff 1px solid;
   margin-left: 30px;
-  margin-right: 20px;
   width: 104px;
   height: 36px;
 }
@@ -122,6 +126,7 @@ export default {
   border: #829aff 1px solid;
   width: 90px;
   height: 36px;
+  margin-left: 30px;
 }
 
 .homework-repository-text {

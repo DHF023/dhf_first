@@ -37,40 +37,43 @@
           </el-menu>
         </div>
 
-        <!-- 全局搜索框 -->
-        <div class="search-box">
-          <el-input
-              placeholder="请输入搜索内容"
-              v-model="searchQuery"
-              clearable
-              @keyup.enter.native="handleSearch"
-              prefix-icon="el-icon-search"
-              style="width: 400px;"
-          ></el-input>
-        </div>
-
+        <!-- 全局搜索框和头像/登录注册按钮容器 -->
+        <div class="header-right">
+          <!-- 全局搜索框 -->
+          <div class="search-box" :class="{ 'search-box-expanded': isSearching }">
+            <i class="el-icon-search search-icon" @click="toggleSearchByIcon"></i>
+            <el-input
+                v-show="isSearching"
+                placeholder="请输入搜索内容"
+                v-model="searchQuery"
+                clearable
+                @keyup.enter.native="handleSearch"
+                ref="searchBox"
+                style="padding-left: 30px;"
+            ></el-input>
+          </div>
 
         <!-- 其他功能区域 -->
-        <div class="other" v-if="isLoggedIn">
-          <el-dropdown style="height: 60px; line-height: 60px;">
+          <div class="other" v-if="isLoggedIn">
+            <el-dropdown style="height: 60px; line-height: 60px;">
+              <div>
+                <el-avatar :src="'http://localhost:8080/api/files/' + avatarUrl" :size="46" style="margin-top: 7px;"></el-avatar>
+              </div>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item @click.native="personal">个人中心</el-dropdown-item>
+                <el-dropdown-item @click.native="updatePassword">修改密码</el-dropdown-item>
+                <el-dropdown-item @click.native="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
+          <div class="other" v-else>
             <div>
-              <el-avatar :src="'http://localhost:8080/api/files/' + avatarUrl" :size="46" style="margin-top: 7px;"></el-avatar>
+              <el-button type="text" @click="signIn"><span class="text-in-button">登录</span></el-button>
+              <el-button type="text" @click="signUp"><span class="text-in-button">注册</span></el-button>
             </div>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item @click.native="personal">个人中心</el-dropdown-item>
-              <el-dropdown-item @click.native="updatePassword">修改密码</el-dropdown-item>
-              <el-dropdown-item @click.native="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </div>
-        <div class="other" v-else>
-          <div>
-            <el-button type="text" @click="signIn"><span class="text-in-button">登录</span></el-button>
-            <el-button type="text" @click="signUp"><span class="text-in-button">注册</span></el-button>
           </div>
         </div>
       </el-header>
-
 
       <!-- 主内容区域 -->
       <el-main class="main">
@@ -88,6 +91,7 @@ export default {
     return {
       // 用户信息，从localStorage中获取
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+      isSearching: false, // 控制搜索框的显示状态
       searchQuery: '',
     }
   },
@@ -130,16 +134,26 @@ export default {
     signUp() {
       this.$router.push("/register");
     },
+    // 切换搜索状态（仅通过放大镜图标触发）
+    toggleSearchByIcon() {
+      if (this.isSearching) {
+        this.isSearching = false; // 如果搜索框已展开，则点击图标后收缩
+      } else {
+        this.isSearching = true; // 如果搜索框未展开，则点击图标后展开
+        // 自动聚焦到输入框（可选）
+        if (this.$refs.searchBox) {
+          this.$nextTick(() => this.$refs.searchBox.focus());
+        }
+      }
+    },
     // 处理搜索
     handleSearch() {
       if (this.searchQuery.trim() !== '') {
-        // 导航到搜索页面，并带上查询参数
         this.$router.push({ path: '/search', query: { q: this.searchQuery } });
       } else {
-        // 如果搜索查询为空，给出提示
         this.$message('请输入搜索内容');
       }
-    }
+    },
   },
 };
 </script>
@@ -161,7 +175,7 @@ export default {
   display: flex; /* 使用Flexbox布局 */
   justify-content: space-between; /* 子元素在主轴上均匀分布 */
   align-items: center; /* 子元素在交叉轴上居中对齐 */
-  padding: 0 30px; /* 为header添加内边距，确保内容不会紧贴边缘 */
+  padding: 0 30px 0 100px; /* 为header添加内边距，确保内容不会紧贴边缘 */
 }
 
 .main {
@@ -173,21 +187,79 @@ export default {
 }
 
 .router {
-  margin-left: 100px;
+  flex-basis: 55%; /* 设置基础宽度为55% */
+  flex-grow: 1;
 }
 
 .other {
   display: flex; /* 使内部元素也使用Flexbox布局 */
   align-items: center; /* 内部元素垂直居中 */
+  margin-left: 20px;
 }
 
 
 .search-box {
-  width: 400px;
+  position: relative;
+  width: 40px; /* 初始宽度为放大镜图标的宽度 */
+  transition: width 0.3s ease; /* 添加过渡效果 */
+  display: flex;
+  align-items: center;
+}
+
+.search-box-expanded {
+  width: 400px; /* 展开后的宽度 */
+  border: 1px solid #dcdfe6; /* 展开后添加边框，颜色可根据需要调整 */
+  border-radius: 20px; /* 确保展开后也保持圆角 */
+}
+
+.search-box /deep/ .el-input__inner {
+  border: none; /* 隐藏输入框的边框 */
+  padding-left: 20px;
+  margin-right: 30px;
+}
+.search-box /deep/ .el-input__inner:focus {
+  border: none;
+  outline: none; /* 通常也会去除聚焦时的轮廓线 */
+}
+
+.search-box /deep/ .el-input {
+  width: 97%;
+  box-sizing: border-box;
+  transition: width 0.3s ease; /* 与搜索框宽度变化同步的过渡效果 */
+}
+
+.search-box .el-input input {
+  padding-left: 30px; /* 为放大镜图标留出空间 */
+  box-sizing: border-box;
+}
+
+
+.search-icon {
+  font-size: 24px;
+  cursor: pointer;
+  position: absolute;
+  left: 10px; /* 确保放大镜图标在输入框内左侧 */
+  transition: left 0.3s ease; /* 放大镜位移的过渡效果 */
+  z-index: 1; /* 确保放大镜图标位于输入框之上 */
+}
+
+.search-box-expanded .search-icon {
+  left: 10px; /* 展开后放大镜图标位置不变 */
+}
+
+.search-box.active {
+  width: 400px; /* 展开后的宽度 */
 }
 
 .text-in-button {
   font-size: 14px;
   color: #4a5ed0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 使内容靠右对齐 */
+
 }
 </style>

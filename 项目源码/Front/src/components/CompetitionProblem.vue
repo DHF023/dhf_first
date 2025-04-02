@@ -3,8 +3,7 @@
     <div class="left-part" :class="{ collapsed: isSidebarCollapsed }">
       <div>
         <!-- 边栏收起状态 -->
-        <!-- 边栏收起时显示 -->
-        <div v-if="isSidebarCollapsed === true">
+        <div v-if="isSidebarCollapsed">
           <div style="width: 100%; height: 30px;">
             <el-button class="toggle-button" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-right" style="color: #4c4c4c;"></i>
@@ -14,8 +13,7 @@
         </div>
 
         <!-- 边栏打开状态 -->
-        <!-- 边栏展开时显示 -->
-        <div v-if="isSidebarCollapsed === false">
+        <div v-else>
           <div style="width: 100%; height: 30px; display: flex; align-items: center;">
             <el-button class="toggle-button" style="margin-left: 200px;" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-left" style="color: #4c4c4c;"></i>
@@ -23,18 +21,20 @@
           </div>
           <el-divider class="divider"></el-divider>
           <div>
-            <el-table :data="competitionProblems">
-              <el-table-column prop="id" label="#" width="40"></el-table-column>
+            <!-- 题目列表 -->
+            <el-table :data="competitionProblems" style="width: 100%;">
+              <el-table-column prop="problemId" label="#" width="40"></el-table-column>
               <el-table-column prop="title" label="标题">
                 <template v-slot="scope">
-                  <a href="javascript:void(0);" @click="openCompetitionProblemDetail(scope.row.id)" class="title-link">{{ scope.row.title }}</a>
+                  <a href="javascript:void(0);" @click="openCompetitionProblemDetail(scope.row.problemId)" class="title-link">题目{{ scope.row.problemId }}</a>
                 </template>
               </el-table-column>
             </el-table>
           </div>
+          <!-- 其他按钮 -->
           <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === false" round>提交答案</el-button>
           <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === true" round>返回题目</el-button>
-          <el-button type="primary" size="medium" class="goto-button" @click="dialogVisible = true" round>提交记录</el-button>
+          <el-button type="primary" size="medium" class="goto-button" @click="showSubmissionRecords" round>提交记录</el-button>
         </div>
       </div>
     </div>
@@ -44,7 +44,9 @@
       <div class="detail" v-if="isSubmit === false">
         <el-container style="background-color: #ffffff;">
           <el-header style="height: 60px; display: flex;">
-            <h2 style="width: 50%">{{ problemDetail.id }} {{ problemDetail.title }}</h2>
+            <div>
+              <h2>{{ problemId }} 题目{{ problemId }}</h2>
+            </div>
           </el-header>
           <el-main style="margin-bottom: 30px;">
             <h2>题目背景</h2>
@@ -148,12 +150,14 @@
         top="0"
     >
       <div class="dialog-content">
-        <el-table :data="record" class="table" height="100%">
-          <el-table-column prop="state" label="状态"></el-table-column>
-          <el-table-column prop="id" label="编号"></el-table-column>
-          <el-table-column prop="title" label="题目"></el-table-column>
-          <el-table-column prop="time" label="完成时间"></el-table-column>
-          <el-table-column prop="num" label="提交次数"></el-table-column>
+        <el-table :data="submissionRecords" class="table" height="100%">
+          <el-table-column prop="submission_id" label="提交ID"></el-table-column>
+          <el-table-column prop="problem_id" label="题目ID"></el-table-column>
+          <el-table-column prop="submit_time" label="提交时间"></el-table-column>
+          <el-table-column prop="language" label="编程语言"></el-table-column>
+          <el-table-column prop="status" label="状态"></el-table-column>
+          <el-table-column prop="time_used" label="耗时(ms)"></el-table-column>
+          <el-table-column prop="memory_used" label="内存使用(MB)"></el-table-column>
         </el-table>
       </div>
     </el-dialog>
@@ -162,19 +166,16 @@
 
 
 <script>
-import { competitionProblems } from "@/data/competition-problems.js";
-import  MonacoEditor from '@/views/MonacoEditor.vue'
-import { records } from "@/data/records";
-import {languages} from "@/data/languages";
+import MonacoEditor from '@/views/MonacoEditor.vue';
+import { languages } from "@/data/languages";
+import newRequest from '@/utils/newRequest';
 
 export default {
   name: 'competition-problem',
-  props: ['id'],
-  data () {
+  data() {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       isSidebarCollapsed: false,
-      competitionProblems: competitionProblems,
       isSubmit: false,
       activeName: 'first',
       sets: {
@@ -187,30 +188,34 @@ export default {
       },
       opts: {
         value: '',
-        readOnly: false, // 是否可编辑
-        language: 'javascript', // 语言类型
-        theme: 'vs' // 编辑器主题
+        readOnly: false,
+        language: 'javascript',
+        theme: 'vs'
       },
-      record: records,
       dialogVisible: false,
-    }
-  },
-  computed: {
-    problemDetail() {
-      return this.competitionProblems.find(problem => problem.id === this.id) || {};
-    }
+      competitionProblems: [],
+      submissionRecords: [],
+      contestId: null,
+    };
   },
   components: {
     MonacoEditor
   },
   methods: {
-    // 切换边栏的展开和收起状态
     toggleSidebar() {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
-    openCompetitionProblemDetail(competitionProblemId) {
-      if (this.$route.params.id !== competitionProblemId) {
-        this.$router.push({ name: 'CompetitionProblemDetail', params: { id: competitionProblemId } });
+    openCompetitionProblemDetail(problemId) {
+      if (this.$route.params.problemId === problemId.toString()) {
+        // 点击的是当前题目标题，刷新提交记录
+        this.fetchSubmissionRecords();
+      } else {
+        // 点击的是不同的题目标题，进行路由跳转
+        const targetRoute = {
+          name: 'CompetitionProblem',
+          params: { contestId: this.$route.params.contestId, problemId }
+        };
+        this.$router.push(targetRoute);
       }
     },
     Submit() {
@@ -219,21 +224,62 @@ export default {
     handleClick(tab, event) {
       console.log(tab, event);
     },
-    changeLanguage (val) {
-      this.opts.language = val
+    changeLanguage(val) {
+      this.opts.language = val;
     },
-    changeTheme (val) {
-      this.opts.theme = val
+    changeTheme(val) {
+      this.opts.theme = val;
     },
-    // 手动获取值
-    getValue () {
+    getValue() {
       this.$message.info('代码已输出至控制台');
-      console.log('输出代码:' + this.$refs.monaco.getVal())
+      console.log('输出代码:' + this.$refs.monaco.getVal());
     },
-    // 内容改变自动获取值
-    changeValue (val) {
-      console.log(val)
+    changeValue(val) {
+      console.log(val);
     },
+    fetchContestInfo() {
+      const contestId = parseInt(this.$route.params.contestId, 10); // 从路由参数获取比赛ID
+      this.contestId = contestId; // 存储比赛ID到组件状态
+
+      newRequest.get(`/api/contest/getinfo/${contestId}`)
+          .then(response => {
+            this.competitionProblems = response.problem_ids.map(problemId => ({ problemId, title: `题目${problemId}` }));
+          })
+          .catch(error => {
+            console.error('Failed to fetch contest info:', error);
+          });
+    },
+    fetchSubmissionRecords() {
+      const contestId = this.$route.params.contestId; // 从路由参数获取比赛ID
+
+      newRequest.get(`/api/contest/get_contest_user_submission/${contestId}`)
+          .then(response => {
+            this.submissionRecords = response; // 假设响应数据直接是提交记录列表
+          })
+          .catch(error => {
+            console.error('Failed to fetch submission records:', error);
+            // 可以在这里添加错误处理逻辑，比如显示错误消息
+          });
+    },
+    showSubmissionRecords() {
+      this.fetchSubmissionRecords(); // 获取提交记录
+      this.dialogVisible = true; // 显示对话框
+    }
+  },
+  created() {
+    // 组件创建时获取比赛信息
+    this.fetchContestInfo();
+
+    // 从路由参数中获取题目ID
+    this.problemId = parseInt(this.$route.params.problemId, 10);
+  },
+  watch: {
+    // 监听路由变化
+    '$route'(to, from) {
+      // 从新的路由参数中获取题目ID
+      this.problemId = parseInt(to.params.problemId, 10);
+      window.location.reload();
+    }
   },
 };
 </script>

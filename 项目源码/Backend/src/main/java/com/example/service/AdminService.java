@@ -11,7 +11,10 @@ import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @Service
 public class AdminService {
@@ -111,4 +114,39 @@ public class AdminService {
         return adminDao.selectByPrimaryKey(id);
     }
 
+    private Map<String, String> verificationCodes = new HashMap<>(); // 用于存储验证码（实际应用中应使用更持久化的存储方式）
+
+    public boolean sendVerificationCode(String email) {
+        Admin admin = adminDao.findByEmail(email);
+        if (admin == null) {
+            return false; // 邮箱不存在
+        }
+
+        String code = generateVerificationCode();
+        verificationCodes.put(email, code); // 存储验证码（实际应用中应考虑过期时间等）
+
+        // 发送邮件（这里需要调用邮件发送服务，代码省略）
+        // emailService.sendEmail(email, "您的验证码是: " + code);
+
+        return true; // 假设邮件发送成功
+    }
+
+    public boolean validateVerificationCode(String email, String code) {
+        String storedCode = verificationCodes.get(email);
+        return storedCode != null && storedCode.equals(code);
+    }
+
+    public boolean resetPassword(String email, String newPassword) {
+        if (validateVerificationCode(email, verificationCodes.get(email))) {
+            adminDao.updatePasswordByEmail(email, newPassword);
+            verificationCodes.remove(email); // 验证通过后移除验证码
+            return true;
+        }
+        return false;
+    }
+
+    private String generateVerificationCode() {
+        Random random = new Random();
+        return String.format("%06d", random.nextInt(1000000)); // 生成6位数字验证码
+    }
 }

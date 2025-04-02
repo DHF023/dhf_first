@@ -2,7 +2,7 @@
   <div class="examination">
     <div class="main">
       <div class="toolbar">
-        <el-button class="new-examination-btn" round @click="dialogVisible = true">
+        <el-button class="new-examination-btn" round @click="dialogVisible = true" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN' ">
           <span class="new-examination-text">新建考试</span>
         </el-button>
 
@@ -25,9 +25,9 @@
           </el-form-item>
         </el-form>
         <span slot="footer">
-          <el-button @click="dialogVisible = false" round>取 消</el-button>
-          <el-button type="primary" @click="dialogVisible = false" round>下一步</el-button>
-        </span>
+      <el-button @click="dialogVisible = false" round>取 消</el-button>
+      <el-button type="primary" @click="goToNewPage" round>下一步</el-button>
+    </span>
       </el-dialog>
     </div>
   </div>
@@ -39,8 +39,19 @@ export default {
     return {
       dialogVisible: false,
       isAuto: '',
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
     }
-  }
+  },
+  methods: {
+    goToNewPage() {
+      this.dialogVisible = false;
+      if (this.isAuto === '手动创建考试') {
+        this.$router.push('/new-examination-page');
+      } else if (this.isAuto === '自动随机组卷') {
+        this.$router.push('/new-examination-page-auto');
+      }
+    },
+  },
 }
 </script>
 
@@ -69,7 +80,6 @@ export default {
   background-color: #829aff;
   border: #829aff 1px solid;
   margin-left: 30px;
-  margin-right: 20px;
   width: 104px;
   height: 36px;
 }
@@ -116,6 +126,7 @@ export default {
   border: #829aff 1px solid;
   width: 90px;
   height: 36px;
+  margin-left: 30px;
 }
 
 .examination-repository-text {

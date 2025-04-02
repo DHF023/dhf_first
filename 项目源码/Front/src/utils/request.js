@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建一个axios对象出来
 const request = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: 'http://59.79.9.18:8080/api',
     timeout: 5000
 })
 
@@ -18,7 +18,6 @@ request.interceptors.request.use(config => {
         config.headers['token'] = JSON.parse(user).token;
     }
 
-    // config.headers['token'] = user.token;  // 设置请求头
     return config
 }, error => {
     console.error('响应拦截器中的错误:', error); // 更详细的错误日志

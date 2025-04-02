@@ -8,6 +8,7 @@ import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -79,4 +80,26 @@ public class AdminController {
         return Result.success(info);
     }
 
+    @PostMapping("/sendVerificationCode")
+    public Result sendVerificationCode(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        boolean isSent = adminService.sendVerificationCode(email);
+        return isSent ? Result.success("验证码已发送至您的邮箱") : Result.error("邮箱不存在或发送失败");
+    }
+
+    @PostMapping("/validateVerificationCode")
+    public Result validateVerificationCode(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String code = request.get("code");
+        boolean isValid = adminService.validateVerificationCode(email, code);
+        return isValid ? Result.success("验证码正确") : Result.error("验证码错误");
+    }
+
+    @PostMapping("/resetPassword")
+    public Result resetPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String newPassword = request.get("newPassword");
+        boolean isReset = adminService.resetPassword(email, newPassword);
+        return isReset ? Result.success("密码重置成功") : Result.error("密码重置失败");
+    }
 }

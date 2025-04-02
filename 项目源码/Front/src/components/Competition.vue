@@ -3,7 +3,7 @@
     <div class="main">
       <!-- 标题部分 -->
       <div class="header">
-        <span style="line-height: 60px; font-size: 24px; font-weight: bold;">{{ competition.title }}</span>
+        <span style="line-height: 60px; font-size: 24px; font-weight: bold;">{{ competition.contest_title }}</span>
       </div>
       <!-- 按钮区域 -->
       <div style="display: flex; justify-content: center;">
@@ -24,21 +24,26 @@
 </template>
 
 <script>
-import { competition } from "@/data/competition.js";
+import newRequest from '@/utils/newRequest';
 
 export default {
   name: 'Competition',
   data() {
     return {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-      id: this.$route.params.id ? String(this.$route.params.id) : '', // 确保 id 是字符串，或提供一个默认值
+      id: this.$route.params.id ? String(this.$route.params.id) : '',
+      competition: {
+        contest_title: '',
+        holder_id: '',
+        holder_name: '',
+        start_time: '',
+        end_time: '',
+      },
+      loading: true,
+      error: null
     };
   },
   computed: {
-    competition() {
-      // 确保根据id从数据源中获取比赛详情
-      return competition.find(c => c.id === this.id);
-    },
     currentRouteName() {
       return this.$route.name; // 获取当前路由的名称
     },
@@ -56,16 +61,33 @@ export default {
     navigateTo(routeName) {
       this.$router.push({ name: routeName, params: { id: this.id } });
     },
+    fetchContestInfo() {
+      newRequest.get(`/api/contest/getinfo/${this.id}`)
+        .then(response => {
+          this.competition = response;
+          this.loading = false;
+          console.log('Contest Info:', this.competition);
+        })
+        .catch(error => {
+          this.error = error;
+          this.loading = false;
+          console.error('Failed to fetch contest info:', error);
+        });
+    }
   },
   watch: {
-    // 监听路由变化，更新id
+    // 监听路由变化，更新id并重新获取比赛信息
     '$route'(to) {
       this.id = to.params.id;
+      this.fetchContestInfo();
     }
+  },
+  mounted() {
+    // 组件挂载时获取比赛信息
+    this.fetchContestInfo();
   }
 };
 </script>
-
 
 <style scoped>
 .competition {
@@ -74,7 +96,6 @@ export default {
   display: flex;
   justify-content: center;
 }
-
 
 .main {
   position: relative;
@@ -85,18 +106,15 @@ export default {
   width: 65%;
 }
 
-
 .header {
   display: flex;
   justify-content: center;
   height: 60px;
 }
 
-
 .text-button:hover {
   font-weight: bold;
 }
-
 
 .active-button span {
   font-weight: bold;
