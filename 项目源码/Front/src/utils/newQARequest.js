@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 // 创建一个新的axios对象
-const newRequest = axios.create({
-    baseURL: 'http://58.199.162.141:5000',
+const newQARequest = axios.create({
+    baseURL: 'http://192.168.58.10:5000',
     timeout: 10000 // 可选，设置超时时间
 });
 
 // request 拦截器
-newRequest.interceptors.request.use(config => {
+newQARequest.interceptors.request.use(config => {
     // 在发送请求之前添加认证token
     const user = localStorage.getItem("user");
     if (user) {
@@ -21,7 +21,7 @@ newRequest.interceptors.request.use(config => {
 });
 
 // response 拦截器
-newRequest.interceptors.response.use(response => {
+newQARequest.interceptors.response.use(response => {
     // 对响应数据做点什么
     return response.data;
 }, error => {
@@ -29,4 +29,4 @@ newRequest.interceptors.response.use(response => {
     return Promise.reject(error);
 });
 
-export default newRequest;
+export default newQARequest;

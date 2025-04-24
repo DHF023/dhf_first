@@ -1,4 +1,5 @@
 <template>
+  <!-- 个人中心页面模板 -->
   <div class="center">
     <el-container class="container">
       <el-header style="height: 50px; display: flex; align-items: center;">
@@ -33,7 +34,7 @@
               <el-radio v-model="form.sex" label="男">男</el-radio>
               <el-radio v-model="form.sex" label="女">女</el-radio>
             </el-form-item>
-            <el-form-item label="年 龄" prop="age" >
+            <el-form-item label="年 龄" prop="age">
               <el-input v-model="form.age" autocomplete="off" style="width: 200px;" clearable></el-input>
             </el-form-item>
             <el-form-item label="身 份" prop="role">
@@ -62,39 +63,31 @@
 
 <script>
 import request from "@/utils/request";
-import userSvg from "@/assets/customer-fill.svg"
+import userSvg from "@/assets/customer-fill.svg";
 
+// 个人中心页面脚本
 export default {
   name: 'personal-center',
   data() {
     return {
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}, // 当前用户信息
       form: {
-        avatar: '',
-        name: '',
-        age: '',
-        sex: '',
-        phone: '',
-        role: '',
-        email: '',
+        avatar: '', // 用户头像
+        name: '', // 用户名
+        age: '', // 用户年龄
+        sex: '', // 用户性别
+        phone: '', // 用户联系方式
+        role: '', // 用户身份
+        email: '', // 用户邮箱
       },
-      userSvg,
+      userSvg, // 用户图标
       rules: {
-        name: [
-          { required: true, message: '请输入用户名', trigger: 'blur' }
-        ],
-        sex: [
-          { required: true, message: '请选择性别', trigger: 'change' }
-        ],
-        age: [
-          { required: true, message: '请输入年龄', trigger: 'blur' }
-        ],
-        role: [
-          { required: true, message: '请选择身份', trigger: 'change' }
-        ],
-        phone: [
-          { required: true, message: '请输入联系方式', trigger: 'blur' }
-        ],
+        // 表单验证规则
+        name: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+        sex: [{ required: true, message: '请选择性别', trigger: 'change' }],
+        age: [{ required: true, message: '请输入年龄', trigger: 'blur' }],
+        role: [{ required: true, message: '请选择身份', trigger: 'change' }],
+        phone: [{ required: true, message: '请输入联系方式', trigger: 'blur' }],
         email: [
           { required: true, message: '请输入邮箱地址', trigger: 'blur' },
           { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
@@ -103,6 +96,7 @@ export default {
     };
   },
   created() {
+    // 组件创建时初始化表单数据
     this.form.avatar = this.user.avatar;
     this.form.name = this.user.name;
     this.form.age = this.user.age;
@@ -113,9 +107,11 @@ export default {
     console.log(JSON.stringify(this.user));
   },
   methods: {
+    // 保存表单数据
     save(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          // 表单验证通过，更新用户信息并发送请求
           this.user.avatar = this.form.avatar;
           this.user.name = this.form.name;
           this.user.age = this.form.age;
@@ -125,42 +121,38 @@ export default {
           this.user.email = this.form.email;
           request.post("/admin", this.user).then(res => {
             if (res.code === '0') {
+              // 保存成功，更新本地存储并重载页面
               this.$message({
                 message: '保存成功',
                 type: 'success'
               });
               localStorage.setItem("user", JSON.stringify(this.user));
-              this.form.avatar = this.user.avatar;
-              this.form.name = this.user.name;
-              this.form.age = this.user.age;
-              this.form.sex = this.user.sex;
-              this.form.role = this.user.role;
-              this.form.phone = this.user.phone;
-              this.form.email = this.user.email;
               window.location.reload();
             } else {
+              // 保存失败，显示错误信息
               this.$message({
                 message: res.msg,
                 type: 'error'
               });
-            };
-          })
+            }
+          });
         }
-      })
+      });
     },
+    // 文件上传成功回调
     successUpload(res) {
       this.form.avatar = res.data;
-    },
+    }
   }
 };
 </script>
 
 <style scoped>
+/* 个人中心页面样式 */
 .center {
   position: relative;
   min-height: calc(100vh - 60px);
-  margin-top: 20px;
-  margin-bottom: 20px;
+  padding: 20px 0 20px 0;
   overflow: auto;
 }
 

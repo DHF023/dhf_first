@@ -1,36 +1,44 @@
 export const pieDifficulty = {
-    title: {
-        text: '不同难度题目完成情况',
-        left: 'center'
-    },
-    tooltip: {
-        trigger: 'item'
-    },
-    legend: {
-        orient: 'vertical',
-        left: 'left'
-    },
-    series: [
-        {
-            name: 'Access From',
-            type: 'pie',
-            radius: '50%',
-            data: [
-                { value: 49, name: '入门' },
-                { value: 23, name: '普及-' },
-                { value: 15, name: '普及/提高-' },
-                { value: 12, name: '普及+/提高' },
-                { value: 9, name: '提高+/省选-' },
-                { value: 5, name: '省选/NOI-' },
-                { value: 1, name: 'NOI/NOI+/CTSC' },
-            ],
-            emphasis: {
-                itemStyle: {
-                    shadowBlur: 10,
-                    shadowOffsetX: 0,
-                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                }
-            }
+  title: {
+    text: '题目难度分布',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{a} <br/>{b}: {c} ({d}%)'
+  },
+  legend: {
+    orient: 'vertical',
+    right: '10%',
+    data: ['简单', '中等', '困难', '挑战']
+  },
+  series: [
+    {
+      name: '难度分布',
+      type: 'pie',
+      radius: '60%',
+      center: ['40%', '50%'],
+      data: [
+        { value: 45, name: '简单', itemStyle: { color: '#67c23a' } },
+        { value: 30, name: '中等', itemStyle: { color: '#e6a23c' } },
+        { value: 15, name: '困难', itemStyle: { color: '#f56c6c' } },
+        { value: 10, name: '挑战', itemStyle: { color: '#909399' } }
+      ],
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
-    ]
+      },
+      label: {
+        formatter: '{b}: {d}%'
+      },
+      labelLine: {
+        smooth: 0.2,
+        length: 10,
+        length2: 20
+      }
+    }
+  ]
 };

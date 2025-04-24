@@ -1,224 +1,422 @@
 <template>
+  <!-- 题目列表组件模板 -->
   <div class="problem-list">
-    <div class="main">
-      <div class="search">
-        <el-input v-model="params.num" clearable style="width: 110px" placeholder="请输入编号"></el-input>
-        <el-input v-model="params.name" clearable style="width: 160px; margin-left: 10px" placeholder="请输入题目名称"></el-input>
-        <el-button style="margin-left: 10px" type="warning" @click="findBySearch()">搜索</el-button>
-        <el-button style="margin-left: 10px" type="primary" @click="showAddDialog = true" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN' ">添加题目</el-button>
+    <div class="main-container">
+      <!-- 侧边栏 -->
+      <div class="sidebar">
+        <div class="card tags-card">
+          <h2>热门标签</h2>
+          <el-divider></el-divider>
+          <div class="tag-cloud">
+            <el-tag
+                v-for="tag in hotTags"
+                :key="tag.name"
+                :type="tag.type"
+                size="medium"
+                class="tag-item"
+                @click="filterByTag(tag.name)">
+              {{ tag.name }} ({{ tag.count }})
+            </el-tag>
+          </div>
+        </div>
       </div>
-      <div class="table">
-        <el-table :data="problem">
-          <el-table-column prop="state" label="状态" width="70"></el-table-column>
-          <el-table-column prop="id" label="编号" width="100"></el-table-column>
-          <el-table-column prop="title" label="题目名称" width="250">
-            <template v-slot="scope">
-              <a href="javascript:void(0);" @click="openProblemDetail(scope.row.id)" class="title-link">{{ scope.row.title }}</a>
-            </template>
-          </el-table-column>
-          <el-table-column prop="tags" label="标签" width="200">
-            <template slot-scope="scope">
-              <el-tag
-                  v-for="(tag, index) in scope.row.tags.slice(0, 2)"
-                  :key="index"
-                  type="info"
-                  style="margin-right: 5px; cursor: pointer;"
-                  @click="filterByTag(tag)"
-              >
-                {{ tag }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="difficulty" label="难度" width="100"
-            :filters="[
-               { text: '简单', value: '简单' },
-               { text: '中等', value: '中等' },
-               { text: '困难', value: '困难' }
-            ]"
-            :filter-method="filterDifficulty">
-            <template slot-scope="scope">
-              <el-tag :type="getTagType(scope.row.difficulty)">
-                {{ scope.row.difficulty }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="pass" label="通过率" width="80">
-            <template slot-scope="scope">
-              {{ scope.row.pass }}%
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <div class="block">
-        <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="params.pageNum"
-          :page-sizes="[10, 20, 30, 40]"
-          :page-size="params.pageSize"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total">
-        </el-pagination>
+
+      <!-- 主内容区 -->
+      <div class="main-content">
+        <div class="search">
+          <!-- 搜索输入框和按钮 -->
+          <el-input
+              v-model="searchParams.title"
+              clearable
+              placeholder="请输入题目名称"
+              style="width: 160px; margin-left: 10px"
+          />
+          <el-button
+              type="warning"
+              style="margin-left: 10px"
+              @click="searchProblems"
+          >
+            搜索
+          </el-button>
+          <!-- 管理员或教师可见的添加题目和编辑题目按钮 -->
+          <el-button
+              v-if="isAdminOrTeacher"
+              type="primary"
+              style="margin-left: 10px"
+              @click="openAddProblemWindow"
+          >
+            添加题目
+          </el-button>
+          <el-button
+              v-if="isAdminOrTeacher"
+              type="primary"
+              style="margin-left: 10px"
+              @click="toggleEditMode"
+          >
+            {{ isEditMode ? '退出编辑' : '编辑题目' }}
+          </el-button>
+        </div>
+        <div class="table">
+          <!-- 非编辑模式下的题目列表 -->
+          <el-table v-if="!isEditMode" :data="paginatedProblems">
+            <el-table-column prop="state" label="状态" width="70" />
+            <el-table-column prop="id" label="编号" width="100" />
+            <el-table-column prop="title" label="题目名称" width="250">
+              <template #default="scope">
+                <a
+                    href="javascript:void(0);"
+                    @click="openProblemDetail(scope.row.id)"
+                    class="title-link"
+                >
+                  {{ scope.row.title }}
+                </a>
+              </template>
+            </el-table-column>
+            <el-table-column prop="tags" label="标签">
+              <template #default="scope">
+                <el-tag
+                    v-for="(tag, index) in scope.row.tags.slice(0, 2)"
+                    :key="index"
+                    type="info"
+                    style="margin-right: 5px; cursor: pointer;"
+                    @click="filterByTag(tag)"
+                >
+                  {{ tag }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+                prop="difficulty"
+                label="难度"
+                width="100"
+                :filters="difficultyFilters"
+                :filter-method="filterDifficulty"
+            >
+              <template #default="scope">
+                <el-tag :type="getTagType(scope.row.difficulty)">
+                  {{ scope.row.difficulty }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="pass" label="通过率" width="80">
+              <template #default="scope">
+                {{ scope.row.pass }}%
+              </template>
+            </el-table-column>
+          </el-table>
+          <!-- 编辑模式下的题目列表，包含编辑操作 -->
+          <el-table v-else :data="paginatedProblems">
+            <el-table-column prop="state" label="状态" width="70" />
+            <el-table-column prop="id" label="编号" width="100" />
+            <el-table-column prop="title" label="题目名称" width="200">
+              <template #default="scope">
+                <a
+                    href="javascript:void(0);"
+                    @click="openProblemDetail(scope.row.id)"
+                    class="title-link"
+                >
+                  {{ scope.row.title }}
+                </a>
+              </template>
+            </el-table-column>
+            <el-table-column prop="tags" label="标签">
+              <template #default="scope">
+                <el-tag
+                    v-for="(tag, index) in scope.row.tags.slice(0, 2)"
+                    :key="index"
+                    type="info"
+                    style="margin-right: 5px; cursor: pointer;"
+                    @click="filterByTag(tag)"
+                >
+                  {{ tag }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+                prop="difficulty"
+                label="难度"
+                width="100"
+                :filters="difficultyFilters"
+                :filter-method="filterDifficulty"
+            >
+              <template #default="scope">
+                <el-tag :type="getTagType(scope.row.difficulty)">
+                  {{ scope.row.difficulty }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="pass" label="通过率" width="80">
+              <template #default="scope">
+                {{ scope.row.pass }}%
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+              <template #default="scope">
+                <el-button
+                    type="text"
+                    size="mini"
+                    @click="editProblem(scope.row.id)"
+                >
+                  编辑
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+        <div class="block">
+          <!-- 分页组件 -->
+          <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="pagination.pageNum"
+              :page-sizes="[10, 20, 30, 40]"
+              :page-size="pagination.pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total"
+          />
+        </div>
       </div>
     </div>
-    <!-- 添加题目对话框 -->
-    <el-dialog
-        title="添加题目"
-        :visible.sync="showAddDialog"
-        width="30%">
-      <el-form>
-        <el-form-item>
-          <el-radio-group v-model="addType">
-            <el-radio label="添加单个题目" style="display: block; margin-bottom: 50px; color: black;" class="el-radio-text1"></el-radio>
-            <el-radio label="批量添加题目" style="display: block; color: black;" class="el-radio-text2"></el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <span slot="footer">
-          <el-button @click="showAddDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleAddProblem">确 定</el-button>
-        </span>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import { problems } from "@/data/problems.js";
+import newRequest from '@/utils/newRequest';
 
+// 题目列表组件脚本
 export default {
   data() {
     return {
-      problem: problems,
-      params:{
-        num: '',
-        name: '',
+      problems: [], // 题目列表
+      total: 0, // 题目总数
+      hotTags: [
+        { name: '动态规划', count: 56, type: '' },
+        { name: '树结构', count: 42, type: 'success' },
+        { name: '图论', count: 38, type: 'warning' },
+        { name: '字符串', count: 35, type: 'danger' },
+        { name: '数组', count: 32, type: 'info' },
+        { name: '排序', count: 28, type: '' },
+        { name: '搜索', count: 25, type: 'success' },
+        { name: '贪心算法', count: 22, type: 'warning' },
+        { name: '位运算', count: 18, type: 'danger' },
+        { name: '数学', count: 15, type: 'info' }
+      ],
+      searchParams: {
+        title: '', // 搜索参数：题目名称
       },
-      total: problems.length,
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-      showAddDialog: false,
-      addType: 'single',
+      pagination: {
+        pageNum: 1, // 当前页码
+        pageSize: 10, // 每页显示条数
+      },
+      user: JSON.parse(localStorage.getItem('user')) || {}, // 当前用户信息
+      showAddDialog: false, // 是否显示添加题目对话框
+      addType: 'single', // 添加题目类型
+      difficultyFilters: [
+        { text: '简单', value: '简单' },
+        { text: '中等', value: '中等' },
+        { text: '困难', value: '困难' },
+      ], // 难度过滤器
+      currentProblem: null, // 当前选中的题目
+      isEditMode: false, // 是否处于编辑模式
     };
   },
-  created() {
+  computed: {
+    // 判断当前用户是否为管理员或教师
+    isAdminOrTeacher() {
+      return this.user.role === '教师' || this.user.role === 'ROLE_ADMIN';
+    },
+    // 计算当前分页的题目列表
+    paginatedProblems() {
+      const start = (this.pagination.pageNum - 1) * this.pagination.pageSize;
+      const end = start + this.pagination.pageSize;
+      return this.problems.slice(start, end);
+    }
   },
-  mounted() {
-
+  created() {
+    // 组件创建时获取所有题目
+    this.fetchAllProblems();
   },
   methods: {
+    // 处理每页显示条数变化
     handleSizeChange(pageSize) {
-      this.params.pageSize = pageSize;
+      this.pagination.pageSize = pageSize;
     },
+    // 处理当前页码变化
     handleCurrentChange(pageNum) {
-      this.params.pageNum = pageNum;
+      this.pagination.pageNum = pageNum;
     },
+    // 打开题目详情页面
     openProblemDetail(problemId) {
-      const url = `/problem/${problemId}`; // 确保这是Problem.vue组件所对应的路由
-      window.open(url, '_blank'); // 在新窗口中打开该URL
+      window.open(`/problem/${problemId}`, '_blank');
     },
-    // 处理添加题目对话框的确定按钮点击事件
-    handleAddProblem() {
-      this.showAddDialog = false;
-      if (this.addType === '添加单个题目') {
-        // 导航到添加单个题目的页面
-        this.$router.push('/add-single-problem');
-      } else if (this.addType === '批量添加题目') {
-        // 导航到批量添加题目的页面
-        this.$router.push('/add-batch-problems');
-      }
-    },
-    filterByTag(tag) {
-      // 假设我们有一个原始题目列表存储在 this.originalProblems 中
-      // 如果没有，可以在 created 或 mounted 钩子中初始化 this.originalProblems = this.problems.slice();
-      if (!this.originalProblems) {
-        this.originalProblems = this.problems.slice();
-      }
+    // 根据标签过滤题目
+    filterByTag(tagName) {
+      this.searchParams.title = '';
+      this.pagination.pageNum = 1;
 
-      // 筛选包含指定标签的题目
-      this.problem = this.originalProblems.filter(problem => problem.tags.includes(tag));
-
-      // 可能还需要重置分页参数等
-      this.params.pageNum = 1;
-      this.params.pageSize = this.params.pageSizes[0];
+      // 实现标签过滤逻辑
+      this.$message.success(`已筛选标签: ${tagName}`);
+      // 这里可以添加实际的过滤逻辑，如API调用等
     },
+    // 根据难度获取标签类型
     getTagType(difficulty) {
-      switch (difficulty) {
-        case '简单':
-          return 'success';
-        case '中等':
-          return 'warning';
-        case '困难':
-          return 'danger';
-        default:
-          return '';
-      }
+      const typeMap = {
+        简单: 'success',
+        中等: 'warning',
+        困难: 'danger',
+      };
+      return typeMap[difficulty] || '';
     },
-    filterDifficulty(value, row, column) {
+    // 难度过滤器方法
+    filterDifficulty(value, row) {
       return row.difficulty === value;
     },
-  }
+    // 搜索题目
+    searchProblems() {
+      if (this.pagination.pageNum > 1) {
+        this.pagination.pageNum = 1;
+      }
+      this.fetchAllProblems();
+    },
+    // 获取所有题目
+    fetchAllProblems() {
+      const requestBody = {
+        ...this.searchParams,
+      };
+      newRequest.post('/api/problem/filter', requestBody)
+          .then(response => {
+            if (Array.isArray(response) && response.length > 0) {
+              const problemIds = response;
+              return this.fetchProblemDetails(problemIds);
+            } else {
+              this.problems = [];
+              this.total = 0;
+              return Promise.resolve();
+            }
+          })
+          .then(() => {
+            this.total = this.problems.length;
+          })
+          .catch(error => {
+            console.error('获取所有题目列表失败:', error);
+            this.$message.error('获取所有题目列表失败，请稍后重试');
+          });
+    },
+    // 根据题目ID列表获取题目详情
+    fetchProblemDetails(problemIds) {
+      const promises = problemIds.map(problemId => {
+        const requestBody = {
+          problem_id: problemId,
+        };
+        return newRequest.post('/api/problem/statement/get', requestBody)
+            .then(response => response)
+            .catch(error => {
+              console.error(`获取题目ID=${problemId}的详细信息失败:`, error);
+              return {
+                id: problemId,
+                title: '无法获取标题',
+                tags: [],
+                is_public: false,
+                // 其他字段设置为默认值或null
+              };
+            });
+      });
+      return Promise.all(promises)
+          .then(responses => {
+            this.problems = responses;
+          })
+          .catch(error => {
+            console.error('并行获取题目详细信息时发生错误:', error);
+            this.$message.error('获取题目详细信息失败，请稍后重试');
+          });
+    },
+    // 打开添加题目窗口
+    openAddProblemWindow() {
+      window.open('/add-problem', '_blank');
+    },
+    // 切换编辑模式
+    toggleEditMode() {
+      this.isEditMode = !this.isEditMode;
+    },
+    // 编辑题目
+    editProblem(problemId) {
+      const url = `/edit-problem/${problemId}`;
+      window.open(url, '_blank');
+    },
+  },
 };
 </script>
 
 <style scoped>
+/* 题目列表组件样式 */
 .problem-list {
   overflow: auto;
   min-height: calc(100vh - 60px);
-  margin-top: 20px;
-  margin-bottom: 20px;
   display: flex;
   justify-content: center;
+  padding: 20px 0;
 }
 
-.main {
-  position: relative;
-  background-color: #ffffff;
+.main-container {
+  display: flex;
+  width: 80%;
+  gap: 20px;
+}
+
+.sidebar {
+  width: 250px;
+}
+
+.main-content {
+  flex: 1;
+  background-color: #fff;
   border: 1px solid #f1f1f1;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
-  width: 55%;
-  margin-bottom: 60px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  padding: 15px;
 }
 
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-item {
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 5px;
+}
+
+.tag-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
 
 .search {
-  margin-top: 15px;
-  margin-left: 15px;
+  display: flex;
+  align-items: center;
 }
 
 .table {
-  width: 97%;
-  margin-top: 5px;
-  margin-left: 15px;
+  width: 100%;
+  margin-top: 20px;
 }
 
 .block {
-  margin-top: 10px;
-  margin-left: 15px;
-  margin-bottom: 10px;
+  margin-top: 20px;
 }
 
 .title-link {
-  text-decoration: none; /* 去掉下划线 */
-  color: #dba800; /* 更改字体颜色，这里以绿色为例 */
-}
-
-.divider {
-  width: 100%;
-  margin: 0 0;
-}
-
-.el-radio-text1::after {
-  content: '（手动编辑题目detail）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
-}
-.el-radio-text2::after {
-  content: '（批量导入题目）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
+  text-decoration: none;
+  color: #dba800;
 }
 </style>

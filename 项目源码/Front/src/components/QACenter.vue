@@ -13,7 +13,7 @@
           <el-divider class="divider-collapse"></el-divider>
 
           <div class="add-collapse">
-            <el-button type="primary" class="add-button-collapse" @click="addNewLine">
+            <el-button type="primary" class="add-button-collapse" @click="createNewConversation">
               <img :src="addSvg" alt="Add"/>
             </el-button>
           </div>
@@ -30,7 +30,7 @@
           <el-divider class="divider"></el-divider>
 
           <div class="add-open">
-            <el-button type="primary" class="add-button-open" @click="addNewLine">
+            <el-button type="primary" class="add-button-open" @click="createNewConversation">
               <div style="display: flex; justify-content: center; align-items: center;">
                 <img :src="addSvg" alt="Add"/><span style="font-size: 18px; margin-left: 3px;">新对话</span>
               </div>
@@ -46,7 +46,7 @@
           </div>
 
           <div class="history">
-            <div v-for="(line, index) in historyLines" :key="index" class="history-line" @click="">
+            <div v-for="(line, index) in historyLines" :key="index" class="history-line" @click="loadMessages(index)">
               <div style="width: 180px; overflow: hidden;">
                 <span class="line-span">{{ line }}</span>
               </div>
@@ -71,41 +71,22 @@
         <div v-if="isNewDialog === false">
           <div class="answer-part">
             <div class="answer-container">
-              <div v-if="message">
-                <div class="message-container-user">
+              <div v-for="(msg, index) in messages" :key="index">
+                <div v-if="msg.from === 'user'" class="message-container-user">
                   <el-avatar :src="'http://localhost:8080/api/files/' + avatarUrl" :size="40"></el-avatar>
                   <div class="message-text">
-                    <p v-html="message">{{ message }}</p>
+                    <p v-html="msg.content"></p>
                   </div>
                 </div>
-              </div>
-              <div v-if="message">
-                <div class="message-container-ai">
+                <div v-else-if="msg.from === 'ai'" class="message-container-ai">
                   <el-avatar :size="40">AI</el-avatar>
                   <div class="answer-main">
-                    <p style="margin-left: 15px;">{{ AImessage }}</p>
+                    <p v-html="msg.content"></p>
                   </div>
-                </div>
-                <div class="thumbs-component">
-                  <div style="display: flex;">
-                    <div
-                        class="thumb"
-                        @click="toggleLike">
-                      <img :src="isLiked ? goodSvg2 : goodSvg1" alt="Thumbs Up"/>
-                    </div>
-                    <div
-                        class="thumb"
-                        @click="toggleDisLike">
-                      <img :src="isDisliked ? badSvg2 : badSvg1" alt="Thumbs Up"/>
-                    </div>
-                  </div>
-                  <span style="color: #585858">|</span>
-                  <el-button type="text" style="margin-left: 5px; height: 23px; font-size: 16px; padding: 0;" @click="">
-                    <span style="color: black"><i class="el-icon-refresh-right"></i>重新生成</span>
-                  </el-button>
                 </div>
               </div>
             </div>
+
           </div>
 
           <div class="ask-part">
@@ -129,9 +110,10 @@
 </template>
 
 <script>
+/*import newQARequest from '@/utils/newQARequest';*/
 import goodSvg1 from '@/assets/appreciate_light.svg';
 import goodSvg2 from '@/assets/appreciate_fill_light.svg';
-import { addHistory, updateHistory, deleteHistory, getHistory } from '@/data/history.js';
+import { addHistory, updateHistory, deleteHistory } from '@/data/history.js';
 import editSvg from '@/assets/创作.svg';
 import deleteSvg from '@/assets/删除.svg';
 import addSvg from '@/assets/electronics.svg';
@@ -145,7 +127,7 @@ export default {
       textarea: '',
       history: '',
       message: '',
-      AImessage: '这是AI的回答',
+      AImessage: '稍等一会，AI正在思考……',
       formattedMessage: '',// 用于存储已经转换为<br>标签的消息
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       isLiked: false,  // 是否点赞
@@ -153,7 +135,9 @@ export default {
       goodSvg1,
       goodSvg2,
       isSidebarCollapsed: false,
+      conversationIds: [],
       historyLines: [],
+      messages: [],
       editSvg,
       deleteSvg,
       addSvg,
@@ -163,8 +147,16 @@ export default {
     }
   },
   mounted() {
-    this.historyLines = getHistory();
+    const userId = this.user.id;
+    this.loadConversations();
+    newQARequest.get(`/conversations`, {
+      params: { user_id: userId }
+    }).then(res => {
+      this.historyLines = res.data.map(c => `对话 ${c.id}`);
+      this.conversationIds = res.data.map(c => c.id);  // 存 conversation_id
+    });
   },
+
   watch: {
     // 监听inputText的变化，实时更新formattedMessage
     textarea(newVal) {
@@ -177,8 +169,65 @@ export default {
     }
   },
   methods: {
+    // 加载用户的所有对话
+    loadConversations() {
+      const userId = this.user.id;
+      newQARequest.get(`/conversations`, {
+        params: { user_id: userId }
+      }).then(res => {
+        this.historyLines = res.data.map(c => `对话 ${c.id}`);
+        this.conversationIds = res.data.map(c => c.id);  // 存储 conversation_id
+      });
+    },
+
+    // 创建新对话
+    createNewConversation() {
+      const userId = this.user.id;
+      newQARequest.post(`/conversations`, { user_id: userId })
+          .then(res => {
+            const newConversationId = res.data.conversation_id;
+            this.historyLines.push(`对话 ${newConversationId}`);
+            this.conversationIds.push(newConversationId);
+            this.loadMessages(this.historyLines.length - 1); // 加载新创建的对话的消息
+          }).catch(err => {
+        console.error("创建新对话失败：", err);
+      });
+    },
+    loadMessages(index) {
+      const conversationId = this.conversationIds[index];  // 获取对应对话ID
+      newQARequest.get(`/messages`, {
+        params: { conversation_id: conversationId }
+      }).then(res => {
+        const messages = res.data;
+        console.log(messages); // 打印消息，确认是否有数据
+
+        // 检查返回的数据格式
+        if (messages && Array.isArray(messages)) {
+          this.messages = messages; // 将消息数据绑定到 Vue 数据中
+        } else {
+          console.error("返回数据格式错误:", messages);
+        }
+      }).catch(err => {
+        console.error("加载消息失败：", err);
+      });
+    },
     promote() {
-      this.message = this.formattedMessage;
+      const userId = this.user.id;
+      const question = this.textarea;
+      const conversationId = this.currentConversationId;
+
+      // 把用户提问加入 messages 列表
+      this.messages.push({ from: 'user', content: this.formattedMessage });
+
+      newQARequest.post("/ask", {
+        user_id: userId,
+        question: question,
+        conversation_id: conversationId
+      }).then(res => {
+        const aiAnswer = res.data.answer;
+        this.messages.push({ from: 'ai', content: aiAnswer }); // 添加 AI 回复
+      });
+
       this.textarea = "";
     },
     handleKeyup(event) {

@@ -1,12 +1,11 @@
 <template>
   <div class="competition">
     <div class="main">
-      <!-- 标题部分 -->
       <div class="header">
         <span style="line-height: 60px; font-size: 24px; font-weight: bold;">{{ competition.contest_title }}</span>
       </div>
-      <!-- 按钮区域 -->
       <div style="display: flex; justify-content: center;">
+        <!-- 导航按钮，用于切换不同视图 -->
         <el-button type="text" @click="navigateTo('List')" :class="{ 'text-button': true, 'active-button': isListActive }">
           <span style="color: #000000; font-size: 14px;">题目列表</span>
         </el-button>
@@ -17,7 +16,7 @@
           <span style="color: #000000; font-size: 14px;">榜单</span>
         </el-button>
       </div>
-      <!-- 路由视图，用于渲染子组件 -->
+      <!-- 路由视图，用于渲染不同子组件 -->
       <router-view></router-view>
     </div>
   </div>
@@ -30,17 +29,17 @@ export default {
   name: 'Competition',
   data() {
     return {
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-      id: this.$route.params.id ? String(this.$route.params.id) : '',
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}, // 当前用户信息
+      id: this.$route.params.id, // 当前比赛ID
       competition: {
-        contest_title: '',
-        holder_id: '',
-        holder_name: '',
-        start_time: '',
-        end_time: '',
+        contest_title: '', // 比赛标题
+        holder_id: '', // 举办者ID
+        holder_name: '', // 举办者名称
+        start_time: '', // 比赛开始时间
+        end_time: '', // 比赛结束时间
       },
-      loading: true,
-      error: null
+      loading: true, // 加载状态
+      error: null // 错误信息
     };
   },
   computed: {
@@ -48,20 +47,23 @@ export default {
       return this.$route.name; // 获取当前路由的名称
     },
     isListActive() {
-      return this.currentRouteName === 'List';
+      return this.currentRouteName === 'List'; // 判断是否为题目列表视图
     },
     isRecordActive() {
-      return this.currentRouteName === 'Record';
+      return this.currentRouteName === 'Record'; // 判断是否为所有提交视图
     },
     isRankActive() {
-      return this.currentRouteName === 'Rank';
-    }
+      return this.currentRouteName === 'Rank'; // 判断是否为榜单视图
+    },
   },
   methods: {
     navigateTo(routeName) {
+      // 导航到指定路由
       this.$router.push({ name: routeName, params: { id: this.id } });
     },
     fetchContestInfo() {
+      // 获取比赛信息
+      console.log('用户token', this.user.token);
       newRequest.get(`/api/contest/getinfo/${this.id}`)
         .then(response => {
           this.competition = response;
@@ -76,7 +78,7 @@ export default {
     }
   },
   watch: {
-    // 监听路由变化，更新id并重新获取比赛信息
+    // 监听路由变化，更新比赛ID并重新获取比赛信息
     '$route'(to) {
       this.id = to.params.id;
       this.fetchContestInfo();

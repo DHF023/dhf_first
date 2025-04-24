@@ -4,10 +4,10 @@
       <el-table :data="rankingList" border v-if="!loading && !error">
         <el-table-column prop="rank" label="#" width="50"></el-table-column>
         <el-table-column prop="username" label="用户名" width="180"></el-table-column>
-        <el-table-column prop="solved_count" label="=" width="50"></el-table-column>
+        <el-table-column prop="solved_count" label="解决数" width="50"></el-table-column>
         <el-table-column prop="penalty" label="罚时" width="75"></el-table-column>
 
-        <!-- 动态生成题目列 -->
+        <!-- 动态生成题目列，根据题目ID显示对应分数或“未提交” -->
         <el-table-column
             v-for="problem_id in problemIds"
             :key="problem_id"
@@ -33,32 +33,32 @@ export default {
   name: 'CompetitionRank',
   data() {
     return {
-      id: this.$route.params.id,
-      rankingList: [],
-      problemIds: [], // 用于存储题目ID列表
-      loading: true,
-      error: null
+      id: this.$route.params.id, // 当前比赛ID
+      rankingList: [], // 排名列表
+      problemIds: [], // 题目ID列表
+      loading: true, // 加载状态
+      error: null // 错误信息
     };
   },
   methods: {
     fetchRanking() {
-      // 假设接口同时返回排行榜和题目ID列表
+      // 获取排名列表和题目ID列表
       newRequest.get(`/api/contest/getinfo/${this.id}`)
         .then(response => {
-          this.rankingList = response.ranklist || [];
-          this.problemIds = response.problem_ids || []; // 从响应中获取题目ID列表
-          this.loading = false;
+          this.rankingList = response.ranklist || []; // 更新排名列表
+          this.problemIds = response.problem_ids || []; // 更新题目ID列表
+          this.loading = false; // 加载完成
         })
         .catch(error => {
-          this.error = error;
-          this.loading = false;
-          console.error('Failed to fetch ranking and problem IDs:', error);
+          this.error = error; // 设置错误信息
+          this.loading = false; // 加载完成
+          console.error('Failed to fetch ranking and problem IDs:', error); // 输出错误信息到控制台
         });
     }
   },
   watch: {
-    // 监听路由变化，更新比赛ID并重新获取排名列表
     '$route'(to) {
+      // 监听路由变化，更新比赛ID并重新获取排名列表
       this.id = to.params.id;
       this.fetchRanking();
     }
@@ -82,12 +82,12 @@ export default {
 
 .table-wrapper {
   display: flex;
-  justify-content: center; /* 水平居中整个表格容器 */
-  width: 100%; /* 确保外层容器占据全宽 */
+  justify-content: center; /* 使表格水平居中 */
+  width: 100%; /* 设置外层容器宽度为100% */
   margin: 30px 0;
 }
 
 .ranking-table {
-  width: auto; /* 使表格宽度自适应内容，或根据需要设置固定宽度 */
+  width: auto; /* 表格宽度自适应内容 */
 }
 </style>

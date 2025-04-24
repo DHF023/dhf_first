@@ -21,9 +21,20 @@
             <el-menu-item index="/qa-center">
               <span slot="title">问答中心</span>
             </el-menu-item>
-            <el-menu-item index="/progress-tracking">
-              <span slot="title">进度追踪</span>
-            </el-menu-item>
+            <el-submenu index="/analysis">
+              <template slot="title">
+                <span>综合分析</span>
+              </template>
+              <el-menu-item index="/homework-analysis">
+                <span>作业完成度</span>
+              </el-menu-item>
+              <el-menu-item index="/exam-analysis">
+                <span>考试分析</span>
+              </el-menu-item>
+              <el-menu-item index="/practice-analysis">
+                <span>题库练习情况</span>
+              </el-menu-item>
+            </el-submenu>
             <el-menu-item index="/homework">
               <span slot="title">作业</span>
             </el-menu-item>
@@ -82,7 +93,6 @@
     </el-container>
   </div>
 </template>
-
 
 <script>
 export default {
@@ -158,7 +168,6 @@ export default {
 };
 </script>
 
-
 <style scoped>
 .container {
   height: 100%;
@@ -172,83 +181,82 @@ export default {
   width: 100%;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
-  display: flex; /* 使用Flexbox布局 */
-  justify-content: space-between; /* 子元素在主轴上均匀分布 */
-  align-items: center; /* 子元素在交叉轴上居中对齐 */
-  padding: 0 30px 0 100px; /* 为header添加内边距，确保内容不会紧贴边缘 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px 0 100px;
 }
 
 .main {
   background-color: #f1f1f1;
   margin-top: 60px;
   overflow: auto;
-  max-height: 100vh;
+  max-height: calc(100vh - 60px);
   padding: 0;
 }
 
 .router {
-  flex-basis: 55%; /* 设置基础宽度为55% */
+  flex-basis: 55%;
   flex-grow: 1;
 }
 
 .other {
-  display: flex; /* 使内部元素也使用Flexbox布局 */
-  align-items: center; /* 内部元素垂直居中 */
+  display: flex;
+  align-items: center;
   margin-left: 20px;
 }
 
-
 .search-box {
   position: relative;
-  width: 40px; /* 初始宽度为放大镜图标的宽度 */
-  transition: width 0.3s ease; /* 添加过渡效果 */
+  width: 40px;
+  transition: width 0.3s ease;
   display: flex;
   align-items: center;
 }
 
 .search-box-expanded {
-  width: 400px; /* 展开后的宽度 */
-  border: 1px solid #dcdfe6; /* 展开后添加边框，颜色可根据需要调整 */
-  border-radius: 20px; /* 确保展开后也保持圆角 */
+  width: 400px;
+  border: 1px solid #dcdfe6;
+  border-radius: 20px;
 }
 
 .search-box /deep/ .el-input__inner {
-  border: none; /* 隐藏输入框的边框 */
+  border: none;
   padding-left: 20px;
   margin-right: 30px;
 }
+
 .search-box /deep/ .el-input__inner:focus {
   border: none;
-  outline: none; /* 通常也会去除聚焦时的轮廓线 */
+  outline: none;
 }
 
 .search-box /deep/ .el-input {
   width: 97%;
   box-sizing: border-box;
-  transition: width 0.3s ease; /* 与搜索框宽度变化同步的过渡效果 */
+  transition: width 0.3s ease;
 }
 
 .search-box .el-input input {
-  padding-left: 30px; /* 为放大镜图标留出空间 */
+  padding-left: 30px;
   box-sizing: border-box;
 }
-
 
 .search-icon {
   font-size: 24px;
   cursor: pointer;
   position: absolute;
-  left: 10px; /* 确保放大镜图标在输入框内左侧 */
-  transition: left 0.3s ease; /* 放大镜位移的过渡效果 */
-  z-index: 1; /* 确保放大镜图标位于输入框之上 */
+  left: 10px;
+  transition: left 0.3s ease;
+  z-index: 1;
 }
 
 .search-box-expanded .search-icon {
-  left: 10px; /* 展开后放大镜图标位置不变 */
+  left: 10px;
 }
 
 .search-box.active {
-  width: 400px; /* 展开后的宽度 */
+  width: 400px;
 }
 
 .text-in-button {
@@ -256,10 +264,36 @@ export default {
   color: #4a5ed0;
 }
 
+/* 新增的导航栏悬浮效果 */
+.el-menu--horizontal .el-menu-item:not(.is-disabled):hover,
+.el-menu--horizontal .el-submenu__title:hover {
+  background-color: #f0f7ff;
+  color: #409EFF;
+}
+
+/* 修改下拉菜单宽度 */
+.el-menu--horizontal .el-submenu .el-menu {
+  min-width: 180px !important;
+}
+
+/* 隐藏下拉菜单箭头 */
+.el-menu--horizontal .el-submenu .el-submenu__icon-arrow {
+  display: none !important;
+}
+
+.el-menu--horizontal .el-menu-item.is-active {
+  color: #409EFF !important;
+  font-weight: bold;
+  border-bottom: none;
+}
+
+.el-menu-item:hover {
+  background-color: #f0f7ff !important;
+}
+
 .header-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end; /* 使内容靠右对齐 */
-
+  justify-content: flex-end;
 }
 </style>

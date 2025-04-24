@@ -63,6 +63,13 @@ public class AdminController {
     }
 
 
+    @DeleteMapping("/batchDelete")
+    public Result batchDelete(@RequestBody List<Integer> ids) {
+        adminService.batchDelete(ids);
+        return Result.success();
+    }
+
+
     @GetMapping
     public Result findAll() {
         // 调用adminService的findAll方法获取所有的Admin列表
@@ -101,5 +108,20 @@ public class AdminController {
         String newPassword = request.get("newPassword");
         boolean isReset = adminService.resetPassword(email, newPassword);
         return isReset ? Result.success("密码重置成功") : Result.error("密码重置失败");
+    }
+
+    @GetMapping("/{id}/username")
+    public Result findUsernameById(@PathVariable Integer id) {
+        // 调用 adminService 的方法，通过 ID 查找用户名
+        String username = adminService.findUsernameById(id);
+
+        // 检查是否找到了用户名
+        if (username == null) {
+            // 如果没有找到，返回错误信息
+            return Result.error("未找到对应用户名");
+        } else {
+            // 如果找到了，返回成功信息和用户名
+            return Result.success(username);
+        }
     }
 }

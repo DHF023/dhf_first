@@ -15,6 +15,9 @@
             <if test="params != null and params.role != null and params.role != ''">
                 and role like concat('%', #{ params.role }, '%')
             </if>
+            <if test="params != null and params.sex != null and params.sex != ''">
+                and sex = #{params.sex}
+            </if>
         </where>
     </select>
 

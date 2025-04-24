@@ -2,8 +2,8 @@
   <div class="competition-problem">
     <div class="left-part" :class="{ collapsed: isSidebarCollapsed }">
       <div>
-        <!-- 边栏收起状态 -->
         <div v-if="isSidebarCollapsed">
+          <!-- 边栏收起状态，显示展开按钮 -->
           <div style="width: 100%; height: 30px;">
             <el-button class="toggle-button" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-right" style="color: #4c4c4c;"></i>
@@ -12,8 +12,8 @@
           <el-divider class="divider-collapse"></el-divider>
         </div>
 
-        <!-- 边栏打开状态 -->
         <div v-else>
+          <!-- 边栏打开状态，显示题目列表和其他按钮 -->
           <div style="width: 100%; height: 30px; display: flex; align-items: center;">
             <el-button class="toggle-button" style="margin-left: 200px;" @click="toggleSidebar" plain>
               <i class="el-icon-arrow-left" style="color: #4c4c4c;"></i>
@@ -21,7 +21,6 @@
           </div>
           <el-divider class="divider"></el-divider>
           <div>
-            <!-- 题目列表 -->
             <el-table :data="competitionProblems" style="width: 100%;">
               <el-table-column prop="problemId" label="#" width="40"></el-table-column>
               <el-table-column prop="title" label="标题">
@@ -31,7 +30,6 @@
               </el-table-column>
             </el-table>
           </div>
-          <!-- 其他按钮 -->
           <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === false" round>提交答案</el-button>
           <el-button type="primary" size="medium" class="goto-button" @click="Submit" v-if="isSubmit === true" round>返回题目</el-button>
           <el-button type="primary" size="medium" class="goto-button" @click="showSubmissionRecords" round>提交记录</el-button>
@@ -39,9 +37,9 @@
       </div>
     </div>
 
-    <!-- 主内容区域 -->
     <div class="main" :class="{ expanded: !isSidebarCollapsed, collapsed: isSidebarCollapsed }">
       <div class="detail" v-if="isSubmit === false">
+        <!-- 题目详情区域 -->
         <el-container style="background-color: #ffffff;">
           <el-header style="height: 60px; display: flex;">
             <div>
@@ -80,6 +78,7 @@
         </el-container>
       </div>
       <div class="editor" v-if="isSubmit === true">
+        <!-- 提交代码和文件区域 -->
         <el-tabs v-model="activeName" @tab-click="handleClick" style="margin-left: 15px;">
           <el-tab-pane label="提交代码" name="first">
             <div>
@@ -90,12 +89,13 @@
                   placeholder="请选择"
                   size="mini"
                   @change="changeLanguage"
-              ><el-option
-                  v-for="item in sets.language"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-              ></el-option>
+              >
+                <el-option
+                    v-for="item in sets.language"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                ></el-option>
               </el-select>
               样式风格：
               <el-select
@@ -104,12 +104,13 @@
                   placeholder="请选择"
                   size="mini"
                   @change="changeTheme"
-              ><el-option
-                  v-for="item in sets.theme"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-              ></el-option>
+              >
+                <el-option
+                    v-for="item in sets.theme"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                ></el-option>
               </el-select>
               <el-button type="primary" size="mini" @click="getValue" style="margin-left: 10px;">提交答案</el-button>
             </div>
@@ -129,9 +130,6 @@
                 style="display: flex; justify-content: center;">
               <i class="el-icon-upload"></i>
               <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-              <div class="el-upload__tip" slot="tip">
-
-              </div>
             </el-upload>
             <div>
               <h3>文件格式要求</h3>
@@ -164,7 +162,6 @@
   </div>
 </template>
 
-
 <script>
 import MonacoEditor from '@/views/MonacoEditor.vue';
 import { languages } from "@/data/languages";
@@ -189,13 +186,14 @@ export default {
       opts: {
         value: '',
         readOnly: false,
-        language: 'javascript',
+        language: 'cpp',
         theme: 'vs'
       },
       dialogVisible: false,
       competitionProblems: [],
       submissionRecords: [],
       contestId: null,
+      problemId: null, // 存储当前题目ID
     };
   },
   components: {
@@ -203,14 +201,14 @@ export default {
   },
   methods: {
     toggleSidebar() {
+      // 切换边栏的收起/展开状态
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
     openCompetitionProblemDetail(problemId) {
+      // 打开题目详情或刷新提交记录
       if (this.$route.params.problemId === problemId.toString()) {
-        // 点击的是当前题目标题，刷新提交记录
         this.fetchSubmissionRecords();
       } else {
-        // 点击的是不同的题目标题，进行路由跳转
         const targetRoute = {
           name: 'CompetitionProblem',
           params: { contestId: this.$route.params.contestId, problemId }
@@ -219,27 +217,53 @@ export default {
       }
     },
     Submit() {
+      // 切换提交答案/返回题目状态
       this.isSubmit = !this.isSubmit;
     },
     handleClick(tab, event) {
+      // 处理标签页点击事件
       console.log(tab, event);
     },
     changeLanguage(val) {
+      // 更改编程语言
       this.opts.language = val;
     },
     changeTheme(val) {
+      // 更改样式风格
       this.opts.theme = val;
     },
     getValue() {
-      this.$message.info('代码已输出至控制台');
-      console.log('输出代码:' + this.$refs.monaco.getVal());
+      // 获取编辑器中的代码
+      const code = this.$refs.MonacoEditor.getVal();
+
+      // 构建提交数据
+      const submitData = {
+        problem_id: this.problemId,
+        code: code,
+        language: this.opts.language,
+        contest_id: this.contestId,
+      };
+
+      // 发送提交请求
+      newRequest.post('/api/problem/submit', submitData)
+          .then(response => {
+            this.$message.success('提交成功！');
+            console.log('提交响应:', response);
+            // 根据需要处理响应数据，比如显示提交ID等
+          })
+          .catch(error => {
+            this.$message.error('提交失败，请检查代码或网络后重试！');
+            console.error('提交错误:', error);
+          });
     },
     changeValue(val) {
+      // 处理编辑器内容变化事件
       console.log(val);
     },
     fetchContestInfo() {
-      const contestId = parseInt(this.$route.params.contestId, 10); // 从路由参数获取比赛ID
-      this.contestId = contestId; // 存储比赛ID到组件状态
+      // 获取比赛信息
+      const contestId = parseInt(this.$route.params.contestId, 10);
+      this.contestId = contestId;
 
       newRequest.get(`/api/contest/getinfo/${contestId}`)
           .then(response => {
@@ -250,40 +274,38 @@ export default {
           });
     },
     fetchSubmissionRecords() {
-      const contestId = this.$route.params.contestId; // 从路由参数获取比赛ID
+      // 获取提交记录
+      const contestId = this.$route.params.contestId;
 
       newRequest.get(`/api/contest/get_contest_user_submission/${contestId}`)
           .then(response => {
-            this.submissionRecords = response; // 假设响应数据直接是提交记录列表
+            this.submissionRecords = response;
+            console.log('提交记录:', this.submissionRecords);
           })
           .catch(error => {
             console.error('Failed to fetch submission records:', error);
-            // 可以在这里添加错误处理逻辑，比如显示错误消息
           });
     },
     showSubmissionRecords() {
-      this.fetchSubmissionRecords(); // 获取提交记录
-      this.dialogVisible = true; // 显示对话框
+      // 显示提交记录对话框
+      this.fetchSubmissionRecords();
+      this.dialogVisible = true;
     }
   },
   created() {
-    // 组件创建时获取比赛信息
+    // 组件创建时获取比赛信息和题目ID
     this.fetchContestInfo();
-
-    // 从路由参数中获取题目ID
     this.problemId = parseInt(this.$route.params.problemId, 10);
   },
   watch: {
-    // 监听路由变化
     '$route'(to, from) {
-      // 从新的路由参数中获取题目ID
+      // 监听路由变化，更新题目ID并刷新页面
       this.problemId = parseInt(to.params.problemId, 10);
       window.location.reload();
     }
-  },
+  }
 };
 </script>
-
 
 <style scoped>
 .competition-problem {
@@ -322,8 +344,8 @@ export default {
 }
 
 .title-link {
-  text-decoration: none; /* 去掉下划线 */
-  color: #dba800; /* 更改字体颜色，这里以绿色为例 */
+  text-decoration: none;
+  color: #dba800;
 }
 
 .main {
@@ -334,10 +356,10 @@ export default {
   overflow: auto;
 }
 .main.expanded {
-  flex-basis: calc(100% - 250px); /* 展开时右侧区域的宽度 */
+  flex-basis: calc(100% - 250px);
 }
 .main.collapsed {
-  flex-basis: calc(100% - 50px); /* 收起时右侧区域的宽度 */
+  flex-basis: calc(100% - 50px);
 }
 
 .goto-button {
@@ -374,24 +396,24 @@ export default {
 }
 
 .dialog-content {
-  height: 80vh; /* 占据对话框的全部高度 */
-  overflow: auto; /* 启用垂直滚动条 */
-  padding: 10px; /* 添加内边距，使内容不贴边 */
+  height: 80vh;
+  overflow: auto;
+  padding: 10px;
 }
 .dialog-content::-webkit-scrollbar {
   display: none;
 }
 
 ::v-deep(.el-dialog__wrapper) {
-  position: fixed; /* 固定定位 */
-  right: 0; /* 右侧对齐 */
-  top: 20px; /* 假设导航栏高度为60px，根据实际情况调整 */
-  height: 100vh; /* 高度设置为视口高度的90% */
-  overflow: hidden; /* 隐藏对话框本身的滚动条，滚动将由内部内容控制 */
-  transition: transform 0.3s ease; /* 添加过渡效果，使对话框滑出更平滑 */
+  position: fixed;
+  right: 0;
+  top: 20px;
+  height: 100vh;
+  overflow: hidden;
+  transition: transform 0.3s ease;
 }
 ::v-deep(.el-dialog__body) {
-  height: 85vh; /* 使对话框高度充满整个对话框容器 */
+  height: 85vh;
 }
 
 ::v-deep(.el-table__body-wrapper) {

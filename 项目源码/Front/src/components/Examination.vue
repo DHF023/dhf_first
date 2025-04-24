@@ -2,33 +2,29 @@
   <div class="examination">
     <div class="main">
       <div class="toolbar">
-        <el-button class="new-examination-btn" round @click="dialogVisible = true" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN' ">
+        <!-- 教师或管理员角色可见的新建考试按钮 -->
+        <el-button class="new-examination-btn" round @click="openNewExaminationPage" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN'">
           <span class="new-examination-text">新建考试</span>
         </el-button>
 
-        <el-button class="examination-repository-btn" round @click="">
-          <span class="examination-repository-text">试卷库</span>
+        <!-- 考试库按钮，用于切换考试列表的显示状态 -->
+        <el-button class="examination-repository-btn" round @click="toggleExaminationList">
+          <span class="examination-repository-text">考试库</span>
         </el-button>
       </div>
       <el-divider class="divider"></el-divider>
 
-      <el-dialog
-          title="选择创建方式"
-          :visible.sync="dialogVisible"
-          width="30%">
-        <el-form>
-          <el-form-item>
-            <el-radio-group v-model="isAuto">
-              <el-radio label="手动创建考试" style="display: block; margin-bottom: 50px; color: black;" class="el-radio-text1"></el-radio>
-              <el-radio label="自动随机组卷" style="display: block; color: black;" class="el-radio-text2"></el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-form>
-        <span slot="footer">
-      <el-button @click="dialogVisible = false" round>取 消</el-button>
-      <el-button type="primary" @click="goToNewPage" round>下一步</el-button>
-    </span>
-      </el-dialog>
+      <!-- 考试列表渲染区域，根据showExaminationList状态显示或隐藏 -->
+      <div style="display: flex; justify-content: center;">
+        <div class="examination-list" v-if="showExaminationList">
+          <el-table :data="examinationList" style="width: 100%" border height="400">
+            <el-table-column prop="title" label="考试标题" width="180"></el-table-column>
+            <el-table-column prop="description" label="考试描述"></el-table-column>
+            <el-table-column prop="startTime" label="开始时间" width="180"></el-table-column>
+            <el-table-column prop="endTime" label="结束时间" width="180"></el-table-column>
+          </el-table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -37,34 +33,32 @@
 export default {
   data() {
     return {
-      dialogVisible: false,
-      isAuto: '',
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-    }
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}, // 当前用户信息，从localStorage获取
+      showExaminationList: false, // 控制考试列表显示状态的布尔值
+      examinationList: [] // 存储考试列表数据的数组
+    };
   },
   methods: {
-    goToNewPage() {
-      this.dialogVisible = false;
-      if (this.isAuto === '手动创建考试') {
-        this.$router.push('/new-examination-page');
-      } else if (this.isAuto === '自动随机组卷') {
-        this.$router.push('/new-examination-page-auto');
-      }
+    openNewExaminationPage() {
+      // 在新标签页打开新建考试页面
+      window.open(this.$router.resolve({ name: 'NewExaminationPage' }).href, '_blank');
     },
-  },
-}
+    toggleExaminationList() {
+      // 切换考试列表的显示状态
+      this.showExaminationList = !this.showExaminationList;
+    }
+  }
+};
 </script>
 
 <style scoped>
 .examination {
   min-height: calc(100vh - 60px);
   overflow: auto;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  padding: 20px 0 20px 0;
   display: flex;
   justify-content: center;
 }
-
 
 .main {
   background-color: #ffffff;
@@ -74,7 +68,6 @@ export default {
   width: 65%;
   margin-bottom: 60px;
 }
-
 
 .new-examination-btn {
   background-color: #829aff;
@@ -93,22 +86,6 @@ export default {
 .new-examination-text {
   color: #f1f1f1;
   font-size: 14px;
-}
-
-
-.el-radio-text1::after {
-  content: '（手动编辑创建新试卷）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
-}
-.el-radio-text2::after {
-  content: '（系统从已有题库中随机选题组卷）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
 }
 
 .toolbar {
@@ -132,5 +109,10 @@ export default {
 .examination-repository-text {
   font-size: 14px;
   color: #829aff;
+}
+
+.examination-list {
+  width: 90%;
+  padding-top: 20px;
 }
 </style>

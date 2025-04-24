@@ -109,6 +109,18 @@ public class AdminService {
         adminDao.deleteByPrimaryKey(id);
     }
 
+    public void batchDelete(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            // 如果传入的 ID 列表为空，则直接返回，不进行任何操作
+            return;
+        }
+
+        for (Integer id : ids) {
+            // 对每个 ID 调用 deleteByPrimaryKey 方法进行删除
+            adminDao.deleteByPrimaryKey(id);
+        }
+    }
+
     public Admin findByById(Integer id) {
         // 根据ID查找管理员
         return adminDao.selectByPrimaryKey(id);
@@ -148,5 +160,19 @@ public class AdminService {
     private String generateVerificationCode() {
         Random random = new Random();
         return String.format("%06d", random.nextInt(1000000)); // 生成6位数字验证码
+    }
+
+    public String findUsernameById(Integer id) {
+        // 调用 adminDao 的方法，通过 ID 查找管理员
+        Admin admin = adminDao.selectByPrimaryKey(id);
+
+        // 检查是否找到了管理员
+        if (admin == null) {
+            // 如果没有找到，返回 null 或抛出异常（根据业务需求决定）
+            return null; // 或者 throw new CustomException("未找到对应ID的管理员");
+        }
+
+        // 如果找到了管理员，返回其用户名
+        return admin.getName();
     }
 }

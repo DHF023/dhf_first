@@ -1,40 +1,40 @@
 <template>
   <div>
-    <!-- 忘记密码框的容器 -->
+    <!-- 忘记密码功能的主容器 -->
     <div class="forget-password-container">
-      <!-- 忘记密码框的标题 -->
+      <!-- 页面标题 -->
       <div class="forget-password-title">忘 记 密 码</div>
-      <!-- 忘记密码表单的容器 -->
+      <!-- 表单容器 -->
       <div class="forget-password-form-container">
         <!-- 忘记密码表单 -->
         <el-form :model="forgetPasswordForm">
-          <!-- 邮箱/用户名输入框 -->
+          <!-- 输入邮箱/用户名的表单项 -->
           <el-form-item>
             <el-input v-model="forgetPasswordForm.identifier" prefix-icon="el-icon-user" class="input-field" placeholder="请输入邮箱/用户名"></el-input>
           </el-form-item>
-          <!-- 验证码输入框 -->
+          <!-- 输入验证码的表单项，包含发送验证码按钮 -->
           <el-form-item class="verification-code-item">
             <div style="display: flex; justify-content: space-between">
               <el-input v-model="forgetPasswordForm.verificationCode" prefix-icon="el-icon-key" class="input-field" placeholder="请输入验证码"></el-input>
-              <el-button type="text" @click="sendVerificationCode" style="">发送验证码</el-button>
+              <el-button type="text" @click="sendVerificationCode">发送验证码</el-button>
             </div>
           </el-form-item>
-          <!-- 新密码输入框 -->
+          <!-- 输入新密码的表单项 -->
           <el-form-item>
             <el-input v-model="forgetPasswordForm.newPassword" show-password prefix-icon="el-icon-lock" class="input-field" placeholder="请输入新密码"></el-input>
           </el-form-item>
-          <!-- 确认新密码输入框 -->
+          <!-- 确认新密码的表单项 -->
           <el-form-item>
             <el-input v-model="forgetPasswordForm.confirmPassword" show-password prefix-icon="el-icon-lock" class="input-field" placeholder="请确认新密码"></el-input>
           </el-form-item>
-          <!-- 提交按钮 -->
+          <!-- 提交表单的按钮 -->
           <el-form-item>
-            <el-button class="submit-button" type="primary" @click="resetPassword()">提 交</el-button>
+            <el-button class="submit-button" type="primary" @click="resetPassword">提 交</el-button>
           </el-form-item>
-          <!-- 返回登录链接 -->
+          <!-- 返回登录页面的链接 -->
           <el-form-item>
             <div class="return-login-link">
-              <a href="javascript:void(0)" @click="navLogin()">返回登录</a>
+              <a href="javascript:void(0)" @click="navLogin">返回登录</a>
             </div>
           </el-form-item>
         </el-form>
@@ -51,26 +51,26 @@ export default {
   data() {
     return {
       forgetPasswordForm: {
-        identifier: '',
-        verificationCode: '',
-        newPassword: '',
-        confirmPassword: ''
+        identifier: '', // 用户输入的邮箱或用户名
+        verificationCode: '', // 用户输入的验证码
+        newPassword: '', // 用户输入的新密码
+        confirmPassword: '' // 用户确认的新密码
       }
     };
   },
   methods: {
-    // 发送验证码到邮箱
+    // 发送验证码到用户邮箱
     sendVerificationCode() {
       request.post("/admin/sendVerificationCode", { email: this.forgetPasswordForm.identifier })
           .then(response => {
-            if (response.data.code === 0) { // 假设成功时code为0
+            if (response.data.code === 0) { // 验证成功
               this.$message({
                 message: '验证码已发送，请注意查收',
                 type: 'info'
               });
             } else {
               this.$message({
-                message: response.data.message, // 显示后端返回的错误信息
+                message: response.data.message, // 显示错误信息
                 type: 'error'
               });
             }
@@ -82,7 +82,7 @@ export default {
             });
           });
     },
-    // 重置密码
+    // 重置用户密码
     resetPassword() {
       if (this.forgetPasswordForm.newPassword !== this.forgetPasswordForm.confirmPassword) {
         this.$message({
@@ -97,7 +97,7 @@ export default {
         newPassword: this.forgetPasswordForm.newPassword
       })
           .then(response => {
-            if (response.data.code === 0) { // 假设成功时code为0
+            if (response.data.code === 0) { // 重置成功
               this.$message({
                 message: '密码重置成功，请登录',
                 type: 'success'
@@ -105,7 +105,7 @@ export default {
               this.$router.push("/login");
             } else {
               this.$message({
-                message: response.data.message, // 显示后端返回的错误信息
+                message: response.data.message, // 显示错误信息
                 type: 'error'
               });
             }
@@ -151,7 +151,7 @@ export default {
 }
 
 .verification-code-item .input-field {
-  width: 70%; /* 验证码输入框宽度调整 */
+  width: 70%; /* 调整验证码输入框的宽度 */
 }
 
 .submit-button {
@@ -165,6 +165,6 @@ export default {
 
 .return-login-link a {
   text-decoration: none;
-  color: #4a5ed0; /* 可选，设置链接颜色 */
+  color: #4a5ed0; /* 设置链接颜色 */
 }
 </style>

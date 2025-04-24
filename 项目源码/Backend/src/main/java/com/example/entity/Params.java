@@ -4,6 +4,7 @@ public class Params {
 
     private String name;
     private String student_id;
+    private String sex;
     private String role;
     private Integer pageNum;
     private Integer pageSize;
@@ -46,5 +47,13 @@ public class Params {
 
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
     }
 }

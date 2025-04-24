@@ -1,70 +1,64 @@
 <template>
+  <!-- 作业组件的模板部分 -->
   <div class="homework">
     <div class="main">
       <div class="toolbar">
-        <el-button class="new-homework-btn" round @click="dialogVisible = true" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN' ">
+        <el-button class="new-homework-btn" round @click="openNewHomeworkPage" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN'">
           <span class="new-homework-text">新建作业</span>
         </el-button>
 
-        <el-button class="homework-repository-btn" round @click="">
+        <el-button class="homework-repository-btn" round @click="toggleHomeworkList">
           <span class="homework-repository-text">作业库</span>
         </el-button>
       </div>
       <el-divider class="divider"></el-divider>
 
-      <el-dialog
-        title="选择创建方式"
-        :visible.sync="dialogVisible"
-        width="30%">
-        <el-form>
-          <el-form-item>
-            <el-radio-group v-model="isAuto">
-              <el-radio label="手动创建作业" style="display: block; margin-bottom: 50px; color: black;" class="el-radio-text1"></el-radio>
-              <el-radio label="自动随机出题" style="display: block; color: black;" class="el-radio-text2"></el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-form>
-        <span slot="footer">
-          <el-button @click="dialogVisible = false" round>取 消</el-button>
-          <el-button type="primary" @click="goToNewPage" round>下一步</el-button>
-        </span>
-      </el-dialog>
+      <div style="display: flex; justify-content: center;">
+        <div class="homework-list" v-if="showHomeworkList">
+          <el-table :data="homeworkList" style="width: 100%" border height="400">
+            <el-table-column prop="title" label="作业标题" width="180"></el-table-column>
+            <el-table-column prop="description" label="作业描述"></el-table-column>
+            <el-table-column prop="startTime" label="开始时间" width="180"></el-table-column>
+            <el-table-column prop="endTime" label="结束时间" width="180"></el-table-column>
+          </el-table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+// 作业组件的脚本部分
 export default {
   data() {
     return {
-      dialogVisible: false,
-      isAuto: '',
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
-    }
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}, // 用户信息
+      showHomeworkList: false, // 控制作业列表显示状态
+      homeworkList: [] // 作业列表数据
+    };
   },
   methods: {
-    goToNewPage() {
-      this.dialogVisible = false;
-      if (this.isAuto === '手动创建作业') {
-        this.$router.push('/new-homework-page');
-      } else if (this.isAuto === '自动随机出题') {
-        this.$router.push('/new-homework-page-auto');
-      }
+    // 打开新建作业页面
+    openNewHomeworkPage() {
+      window.open(this.$router.resolve({ name: 'NewHomeworkPage' }).href, '_blank');
     },
-  },
-}
+    // 切换作业列表显示状态
+    toggleHomeworkList() {
+      this.showHomeworkList = !this.showHomeworkList;
+    }
+  }
+};
 </script>
 
 <style scoped>
+/* 作业组件的样式部分 */
 .homework {
   min-height: calc(100vh - 60px);
   overflow: auto;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  padding: 20px 0 20px 0;
   display: flex;
   justify-content: center;
 }
-
 
 .main {
   background-color: #ffffff;
@@ -74,7 +68,6 @@ export default {
   width: 65%;
   margin-bottom: 60px;
 }
-
 
 .new-homework-btn {
   background-color: #829aff;
@@ -93,22 +86,6 @@ export default {
 .new-homework-text {
   color: #f1f1f1;
   font-size: 14px;
-}
-
-
-.el-radio-text1::after {
-  content: '（手动编辑创建新作业）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
-}
-.el-radio-text2::after {
-  content: '（系统从已有题库中随机选题）';
-  display: block;
-  margin: 10px 24px;
-  font-size: 12px;
-  font-weight: lighter;
 }
 
 .toolbar {
@@ -132,5 +109,10 @@ export default {
 .homework-repository-text {
   font-size: 14px;
   color: #829aff;
+}
+
+.homework-list {
+  width: 90%;
+  padding-top: 20px;
 }
 </style>

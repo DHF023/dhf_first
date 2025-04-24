@@ -1,8 +1,9 @@
 <template>
-  <div class="table-wrapper"> <!-- 使用新的容器类名 -->
-    <div class="table-container"> <!-- 保持原有的容器，用于Flexbox布局 -->
-      <el-table :data="submissions" v-if="!loading && !error" border> <!-- 添加border属性以匹配样式 -->
-        <!-- 表格列保持不变 -->
+  <div class="table-wrapper">
+    <!-- 表格外层容器，用于Flexbox布局和水平居中 -->
+    <div class="table-container">
+      <el-table :data="submissions" v-if="!loading && !error" border>
+        <!-- 表格列定义 -->
         <el-table-column prop="submission_id" label="提交ID" width="60"></el-table-column>
         <el-table-column prop="problem_id" label="题目ID" width="60"></el-table-column>
         <el-table-column prop="user_id" label="用户ID" width="180"></el-table-column>
@@ -22,34 +23,33 @@
 import newRequest from '@/utils/newRequest';
 
 export default {
-  name: 'CompetitionRank',
+  name: 'CompetitionRecord', // 组件名称
   data() {
     return {
-      id: this.$route.params.id,
-      submissions: [],
-      loading: true,
-      error: null
+      id: this.$route.params.id, // 当前比赛ID，从路由参数获取
+      submissions: [], // 提交记录列表
+      loading: true, // 加载状态
+      error: null // 错误信息
     };
   },
   methods: {
     fetchSubmissions() {
-      // 使用newRequest发起请求
+      // 获取提交记录
       newRequest.get(`/api/contest/get_all_submission/${this.id}`)
           .then(response => {
-            // 由于newRequest的response拦截器已经处理了响应数据，这里直接获取data
-            this.submissions = response;
-            this.loading = false;
+            this.submissions = response; // 更新提交记录列表
+            this.loading = false; // 加载完成
           })
           .catch(error => {
-            this.error = error;
-            this.loading = false;
-            console.error('Failed to fetch submissions:', error);
+            this.error = error; // 设置错误信息
+            this.loading = false; // 加载完成
+            console.error('Failed to fetch submissions:', error); // 输出错误信息到控制台
           });
     }
   },
   watch: {
-    // 监听路由变化，更新比赛ID并重新获取提交记录
     '$route'(to) {
+      // 监听路由变化，更新比赛ID并重新获取提交记录
       this.id = to.params.id;
       this.fetchSubmissions();
     }
@@ -60,7 +60,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .loading, .error {
@@ -77,10 +76,10 @@ export default {
   justify-content: center; /* 水平居中整个表格容器 */
   width: 100%; /* 确保外层容器占据全宽 */
   margin: 30px 0;
+  overflow-x: auto; /* 允许表格水平滚动 */
 }
 
 .table-container {
-  width: auto; /* 使容器宽度自适应表格内容，或根据需要设置固定宽度 */
+  width: auto; /* 使容器宽度自适应表格内容 */
 }
-
 </style>
