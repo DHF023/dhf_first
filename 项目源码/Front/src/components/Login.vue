@@ -1,9 +1,8 @@
 <template>
-  <!-- 登录页面模板 -->
-  <div class="login-container">
-    <div class="login-box">
-      <div class="login-title">欢 迎 登 录</div>
-      <div class="login-form-container">
+  <BackgroundContainer>
+    <div class="auth-container">
+      <div class="auth-title">欢 迎 登 录</div>
+      <div class="auth-form-container">
         <el-form :model="admin">
           <el-form-item>
             <el-input v-model="admin.name" prefix-icon="el-icon-user" class="input-field" placeholder="请输入用户名"></el-input>
@@ -24,15 +23,18 @@
         </el-form>
       </div>
     </div>
-  </div>
+  </BackgroundContainer>
 </template>
 
 <script>
 import request from "@/utils/request";
+import BackgroundContainer from '@/components/common/BackgroundContainer.vue';
 
-// 登录组件脚本
 export default {
   name: "Login",
+  components: {
+    BackgroundContainer
+  },
   data() {
     return {
       admin: {}, // 存储登录表单数据
@@ -70,43 +72,12 @@ export default {
 </script>
 
 <style scoped>
-/* 登录页面样式 */
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.login-box {
-  width: 400px;
-  height: 350px;
-  background-color: rgba(85, 133, 215, 0.5);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.login-title {
-  width: 100%;
-  height: 100px;
-  font-size: 30px;
-  line-height: 100px;
-  text-align: center;
-  color: #4a5ed0;
-}
-
-.login-form-container {
-  margin-top: 25px;
-  text-align: center;
-}
-
 .input-field {
-  width: 80%;
+  composes: auth-input;
 }
 
 .login-button {
-  width: 80%;
-  margin-top: 10px;
+  composes: auth-button;
 }
 
 .links-container {
@@ -114,7 +85,6 @@ export default {
 }
 
 .link {
-  text-decoration: none;
-  color: #4a5ed0;
+  composes: auth-link;
 }
 </style>

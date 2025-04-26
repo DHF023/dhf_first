@@ -1,11 +1,11 @@
 <template>
-  <div>
+  <BackgroundContainer>
     <!-- 忘记密码功能的主容器 -->
-    <div class="forget-password-container">
+    <div class="auth-container">
       <!-- 页面标题 -->
-      <div class="forget-password-title">忘 记 密 码</div>
+      <div class="auth-title">忘 记 密 码</div>
       <!-- 表单容器 -->
-      <div class="forget-password-form-container">
+      <div class="auth-form-container">
         <!-- 忘记密码表单 -->
         <el-form :model="forgetPasswordForm">
           <!-- 输入邮箱/用户名的表单项 -->
@@ -40,13 +40,17 @@
         </el-form>
       </div>
     </div>
-  </div>
+  </BackgroundContainer>
 </template>
 
 <script>
 import request from "@/utils/request";
+import BackgroundContainer from '@/components/common/BackgroundContainer.vue';
 
 export default {
+  components: {
+    BackgroundContainer
+  },
   name: "ForgetPassword",
   data() {
     return {
@@ -126,37 +130,13 @@ export default {
 </script>
 
 <style scoped>
-.forget-password-container {
-  width: 400px;
-  height: 430px;
-  margin: 120px auto;
-  background-color: rgba(85, 133, 215, 0.5);
-  border-radius: 10px;
-}
-
-.forget-password-title {
-  width: 100%;
-  height: 100px;
-  font-size: 30px;
-  line-height: 100px;
-  text-align: center;
-  color: #4a5ed0;
-}
-
-.forget-password-form-container {
-  margin-top: 25px;
-  height: 320px;
-  margin-left: 40px;
-  margin-right: 40px;
-}
-
 .verification-code-item .input-field {
-  width: 70%; /* 调整验证码输入框的宽度 */
+  width: 70%;
 }
 
 .submit-button {
+  composes: auth-button;
   width: 100%;
-  margin-top: 10px;
 }
 
 .return-login-link {
@@ -164,7 +144,6 @@ export default {
 }
 
 .return-login-link a {
-  text-decoration: none;
-  color: #4a5ed0; /* 设置链接颜色 */
+  composes: auth-link;
 }
 </style>

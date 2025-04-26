@@ -6,9 +6,30 @@
         <div class="stat-icon" :style="{color: stat.color}">
           <i :class="stat.icon"></i>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-title">{{ stat.title }}</div>
+        <div class="stat-content" :class="{'checkin-layout': stat.title === '连续打卡'}">
+          <div class="stat-left">
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-title">{{ stat.title }}</div>
+          </div>
+          <div v-if="stat.title === '连续打卡'" class="stat-right">
+            <el-button
+              v-if="stat.canCheck"
+              type="success"
+              size="small"
+              @click.stop="checkIn"
+              class="checkin-button"
+            >
+              <i class="el-icon-check"></i> 立即打卡
+            </el-button>
+            <el-tag
+              v-else
+              type="success"
+              size="small"
+              class="checked-tag"
+            >
+              <i class="el-icon-success"></i> 今日已打卡
+            </el-tag>
+          </div>
         </div>
       </div>
     </div>
@@ -155,7 +176,14 @@ export default {
         { title: '学习时长', value: '128h', icon: 'el-icon-time', color: '#409EFF' },
         { title: '完成题目', value: '86题', icon: 'el-icon-document', color: '#67C23A' },
         { title: '正确率', value: '85%', icon: 'el-icon-success', color: '#E6A23A' },
-        { title: '连续打卡', value: '21天', icon: 'el-icon-date', color: '#F56C6C' }
+        {
+          title: '连续打卡',
+          value: '21天',
+          icon: 'el-icon-date',
+          color: '#F56C6C',
+          isChecked: false,
+          canCheck: true
+        }
       ],
 
       // 热门标签数据
@@ -193,6 +221,18 @@ export default {
   mounted() {
     this.initProgressChart();
     window.addEventListener('resize', this.handleResize);
+
+    // 检查今天是否已打卡，与用户ID绑定
+    const userId = this.$store.state.user?.id || 'anonymous';
+    const lastCheckIn = localStorage.getItem(`lastCheckIn_${userId}`);
+    const today = new Date().toDateString();
+    if (lastCheckIn === today) {
+      const checkCard = this.stats.find(s => s.title === '连续打卡');
+      if (checkCard) {
+        checkCard.isChecked = true;
+        checkCard.canCheck = false;
+      }
+    }
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.handleResize);
@@ -270,7 +310,23 @@ export default {
       const now = new Date();
       const activityDate = new Date(date);
       return now > activityDate ? '已完成' : '进行中';
-    }
+    },
+
+    // 打卡方法
+    checkIn() {
+      const checkCard = this.stats.find(s => s.title === '连续打卡');
+      if (checkCard && checkCard.canCheck) {
+        checkCard.isChecked = true;
+        checkCard.canCheck = false;
+        checkCard.value = `${parseInt(checkCard.value) + 1}天`;
+        this.$message.success('打卡成功！');
+
+        // 存储当天打卡状态，与用户ID绑定
+        const today = new Date().toDateString();
+        const userId = this.$store.state.user?.id || 'anonymous';
+        localStorage.setItem(`lastCheckIn_${userId}`, today);
+      }
+    },
   }
 }
 </script>
@@ -373,6 +429,32 @@ export default {
   display: flex;
   align-items: center;
   transition: transform 0.2s;
+  position: relative;
+}
+
+.checkin-layout {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-left {
+  flex: 1;
+}
+
+.stat-right {
+  width: 120px;
+  margin-left: 20px;
+}
+
+.checkin-button {
+  width: 100%;
+}
+
+.checked-tag {
+  width: 100%;
+  text-align: center;
 }
 
 .stat-card:hover {

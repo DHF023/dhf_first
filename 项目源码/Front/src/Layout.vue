@@ -271,9 +271,11 @@ export default {
   color: #409EFF;
 }
 
-/* 修改下拉菜单宽度 */
+/* 修改二级菜单宽度 */
 .el-menu--horizontal .el-submenu .el-menu {
-  min-width: 180px !important;
+  min-width: 200px !important;
+  width: auto !important;
+  max-width: 300px !important;
 }
 
 /* 隐藏下拉菜单箭头 */

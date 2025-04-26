@@ -1,11 +1,11 @@
 <template>
-  <div class="register-container">
+  <BackgroundContainer>
     <!-- 注册表单容器 -->
-    <div class="register-box">
+    <div class="auth-container">
       <!-- 注册标题 -->
-      <div class="register-title">欢 迎 注 册</div>
+      <div class="auth-title">欢 迎 注 册</div>
       <!-- 注册表单内容 -->
-      <div class="register-form-container">
+      <div class="auth-form-container">
         <el-form :model="admin">
           <!-- 用户名输入 -->
           <el-form-item>
@@ -35,13 +35,17 @@
         </el-form>
       </div>
     </div>
-  </div>
+  </BackgroundContainer>
 </template>
 
 <script>
 import request from "@/utils/request"; // 导入请求工具
+import BackgroundContainer from '@/components/common/BackgroundContainer.vue';
 
 export default {
+  components: {
+    BackgroundContainer
+  },
   name: "Register", // 组件名称
   data() {
     return {
@@ -77,45 +81,13 @@ export default {
 </script>
 
 <style scoped>
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.register-box {
-  width: 400px;
-  height: 400px;
-  margin: auto;
-  background-color: rgba(73, 134, 231, 0.5);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.register-title {
-  width: 100%;
-  height: 100px;
-  font-size: 30px;
-  line-height: 100px;
-  text-align: center;
-  color: #3a49a8;
-}
-
-.register-form-container {
-  margin-top: 25px;
-  text-align: center;
-  height: 270px; /* Adjusted to fit the content */
-}
-
 .input-field,
 .select-field {
-  width: 80%;
+  composes: auth-input;
 }
 
 .register-button {
-  width: 80%;
-  margin-top: 10px;
+  composes: auth-button;
 }
 
 .login-link-container {
@@ -123,7 +95,6 @@ export default {
 }
 
 .login-link {
-  text-decoration: none;
-  color: #3a49a8;
+  composes: auth-link;
 }
 </style>

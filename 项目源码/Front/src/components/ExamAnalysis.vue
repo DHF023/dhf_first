@@ -41,10 +41,10 @@
         <div class="prediction-box">
           <h4>下次考试预测</h4>
           <el-progress
-            :percentage="predictedScore"
-            :format="formatPrediction"
-            :color="predictionColor"
-            :stroke-width="16">
+              :percentage="predictedScore"
+              :format="formatPrediction"
+              :color="predictionColor"
+              :stroke-width="16">
           </el-progress>
           <p class="prediction-note">基于最近5次考试成绩分析</p>
           <div class="prediction-tips">
@@ -156,7 +156,7 @@ export default {
   computed: {
     predictionColor() {
       return this.predictedScore >= 80 ? '#67C23A' :
-             this.predictedScore >= 60 ? '#E6A23C' : '#F56C6C'
+          this.predictedScore >= 60 ? '#E6A23C' : '#F56C6C'
     }
   },
   mounted() {

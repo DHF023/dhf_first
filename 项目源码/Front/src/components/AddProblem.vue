@@ -40,18 +40,18 @@
             <!-- 标签输入和显示区域 -->
             <el-form-item label="标签">
               <el-tag
-                v-for="tag in problemForm.tags"
-                :key="tag"
-                closable
-                @close="removeTag(tag)"
+                  v-for="tag in problemForm.tags"
+                  :key="tag"
+                  closable
+                  @close="removeTag(tag)"
               >
                 {{ tag }}
               </el-tag>
               <el-input
-                v-if="inputVisible"
-                v-model="inputValue"
-                @keyup.enter.native="handleInputConfirm"
-                @blur="handleInputConfirm"
+                  v-if="inputVisible"
+                  v-model="inputValue"
+                  @keyup.enter.native="handleInputConfirm"
+                  @blur="handleInputConfirm"
               ></el-input>
               <el-button v-else size="small" @click="showInput">+ 新标签</el-button>
             </el-form-item>
@@ -68,29 +68,29 @@
           <div class="batch-upload-container">
             <div class="upload-actions">
               <el-button
-                type="text"
-                @click="downloadTemplate('txt')"
-                icon="el-icon-download"
+                  type="text"
+                  @click="downloadTemplate('txt')"
+                  icon="el-icon-download"
               >
                 下载TXT模板
               </el-button>
               <el-button
-                type="text"
-                @click="downloadTemplate('excel')"
-                icon="el-icon-download"
+                  type="text"
+                  @click="downloadTemplate('excel')"
+                  icon="el-icon-download"
               >
                 下载Excel模板
               </el-button>
             </div>
 
             <el-upload
-              action="/api/problems/batch-upload"
-              multiple
-              :limit="10"
-              :before-upload="beforeUpload"
-              :on-success="handleBatchUploadSuccess"
-              :on-exceed="handleUploadExceed"
-              accept=".txt,.md,.xlsx"
+                action="/api/problems/batch-upload"
+                multiple
+                :limit="10"
+                :before-upload="beforeUpload"
+                :on-success="handleBatchUploadSuccess"
+                :on-exceed="handleUploadExceed"
+                accept=".txt,.md,.xlsx"
             >
               <el-button type="primary">点击上传</el-button>
               <div slot="tip" class="el-upload__tip">
@@ -99,15 +99,57 @@
             </el-upload>
           </div>
         </el-tab-pane>
+        <el-tab-pane label="智能导入" name="smart">
+          <div class="smart-import-container">
+            <el-upload
+                action=""
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleWordUpload"
+                accept=".docx"
+            >
+              <el-button type="primary">上传Word文件</el-button>
+              <div slot="tip" class="el-upload__tip">
+                支持.docx格式文件，文件大小不超过10MB
+              </div>
+            </el-upload>
+
+            <div v-if="parsedProblems.length > 0" style="margin-top: 20px;">
+              <h3>已解析题目 (共{{ parsedProblems.length }}道)</h3>
+              <ProblemTable
+                  :problems="parsedProblems"
+                  :is-submitting="isSubmitting"
+                  :show-type="true"
+                  :show-statement="true"
+                  :show-options="true"
+                  :show-answer="true"
+                  :pagination="true"
+                  :page-size="10"
+                  :searchable="true"
+                  :filterable="true"
+                  :batch-operations="true"
+                  @remove="removeProblem"
+                  @submit="submitParsedProblems"
+                  @clear="clearParsedProblems"
+                  @edit="handleEditProblem"
+                  @save-all="handleSaveAllProblems"
+                  @batch-remove="handleBatchRemove"
+              />
+            </div>
+            <div v-else style="margin-top: 20px; color: #909399;">
+              暂无解析到的题目，请上传包含标准格式题目的Word文档
+            </div>
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </div>
 
     <!-- 确认对话框 -->
     <el-dialog
-      title="确认添加题目"
-      :visible.sync="dialogVisible"
-      width="30%"
-      :before-close="handleDialogClose"
+        title="确认添加题目"
+        :visible.sync="dialogVisible"
+        width="30%"
+        :before-close="handleDialogClose"
     >
       <span>您确定要添加这道题目吗？</span>
       <span>认真检查填写的题目信息哦！</span>
@@ -121,11 +163,19 @@
 
 <script>
 import newRequest from '@/utils/newRequest';
+import * as mammoth from 'mammoth';
+import ProblemTable from './common/ProblemTable.vue';
 
 export default {
+  components: {
+    ProblemTable
+  },
   data() {
     return {
       activeTab: 'manual', // 当前激活的标签页
+      parsedProblems: [], // 智能导入解析后的题目列表
+      problemsManual: [], // 手动添加的题目列表
+      isSubmitting: false, // 提交加载状态
       problemForm: {
         title: '',
         time_limit: 0,
@@ -147,24 +197,24 @@ export default {
       this.$refs[formName].validate(valid => {
         if (valid) {
           newRequest.post('/api/problem/create', this.problemForm)
-            .then(response => {
-              if (response.OK && response.problem_id) {
-                this.$message.success(`题目创建成功，您创建的题目ID为${response.problem_id}`);
-                this.addedProblems.push({ ...this.problemForm, id: response.problem_id });
-                this.resetForm(formName);
-              } else {
-                this.$message.error(response.message || '题目创建失败');
-              }
-            })
-            .catch(error => {
-              if (error.response) {
-                this.$message.error(error.response.error || '题目创建失败');
-              } else if (error.request) {
-                this.$message.error('请求失败，请检查网络');
-              } else {
-                this.$message.error(`请求出错: ${error.message}`);
-              }
-            });
+              .then(response => {
+                if (response.OK && response.problem_id) {
+                  this.$message.success(`题目创建成功，您创建的题目ID为${response.problem_id}`);
+                  this.addedProblems.push({ ...this.problemForm, id: response.problem_id });
+                  this.resetForm(formName);
+                } else {
+                  this.$message.error(response.message || '题目创建失败');
+                }
+              })
+              .catch(error => {
+                if (error.response) {
+                  this.$message.error(error.response.error || '题目创建失败');
+                } else if (error.request) {
+                  this.$message.error('请求失败，请检查网络');
+                } else {
+                  this.$message.error(`请求出错: ${error.message}`);
+                }
+              });
         } else {
           this.$message.error('请填写完整的题目信息');
         }
@@ -193,10 +243,10 @@ export default {
     // 验证上传文件格式
     beforeUpload(file) {
       const isText = file.type === 'text/plain' ||
-                    file.name.endsWith('.txt') ||
-                    file.name.endsWith('.md');
+          file.name.endsWith('.txt') ||
+          file.name.endsWith('.md');
       const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-                     file.name.endsWith('.xlsx');
+          file.name.endsWith('.xlsx');
 
       if (!isText && !isExcel) {
         this.$message.error('只能上传TXT、MD或Excel文件');
@@ -214,93 +264,93 @@ export default {
     },
 
     // 解析上传的文件内容
-    parseFileContent(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const content = e.target.result;
-            const problems = [];
+    parseWordTextToProblems(text) {
+      const problems = [];
+      const lines = text.split('\n');
+      let currentProblem = null;
+      let inOptions = false;
+      let options = [];
+      let currentOption = null;
 
-            // 简单解析逻辑，实际应根据文件格式实现
-            if (file.name.endsWith('.xlsx')) {
-              // Excel解析逻辑
-              // 这里需要实际实现Excel解析
-              resolve({ type: 'excel', problems });
-            } else {
-              // 文本文件解析
-              const lines = content.split('\n');
-              let currentProblem = null;
+      console.log('原始文本内容:', text); // 调试日志
 
-              lines.forEach(line => {
-                line = line.trim();
-                if (!line) return;
+      lines.forEach((line, index) => {
+        line = line.trim();
+        if (!line) return;
 
-                // 识别题目类型
-                if (line.startsWith('【选择题】')) {
-                  currentProblem = {
-                    type: 'choice',
-                    question: line.replace('【选择题】', '').trim(),
-                    options: [],
-                    answer: '',
-                    time_limit: 1000,
-                    memory_limit: 256,
-                    difficulty: 3
-                  };
-                  problems.push(currentProblem);
-                }
-                else if (line.startsWith('【判断题】')) {
-                  currentProblem = {
-                    type: 'judge',
-                    question: line.replace('【判断题】', '').trim(),
-                    answer: false,
-                    time_limit: 500,
-                    memory_limit: 128,
-                    difficulty: 2
-                  };
-                  problems.push(currentProblem);
-                }
-                else if (line.startsWith('【填空题】')) {
-                  currentProblem = {
-                    type: 'fill',
-                    question: line.replace('【填空题】', '').trim(),
-                    answer: '',
-                    time_limit: 800,
-                    memory_limit: 192,
-                    difficulty: 3
-                  };
-                  problems.push(currentProblem);
-                }
-                else if (currentProblem) {
-                  // 处理题目内容
-                  if (line.startsWith('A.')) currentProblem.options[0] = line.substring(2).trim();
-                  else if (line.startsWith('B.')) currentProblem.options[1] = line.substring(2).trim();
-                  else if (line.startsWith('C.')) currentProblem.options[2] = line.substring(2).trim();
-                  else if (line.startsWith('D.')) currentProblem.options[3] = line.substring(2).trim();
-                  else if (line.startsWith('答案:')) {
-                    const answer = line.substring(3).trim();
-                    if (currentProblem.type === 'judge') {
-                      currentProblem.answer = answer.toLowerCase() === '正确' || answer.toLowerCase() === 'true';
-                    } else {
-                      currentProblem.answer = answer;
-                    }
-                  }
-                  // 处理填空题答案
-                  else if (line.startsWith('填空答案:')) {
-                    currentProblem.answer = line.substring(5).trim();
-                  }
-                }
-              });
-
-              resolve({ type: 'text', problems });
-            }
-          } catch (error) {
-            reject(error);
+        // 更灵活的题目类型识别
+        if (line.match(/^【.+】$/) || line.match(/^\d+\.\s*【.+】$/)) {
+          if (currentProblem) {
+            problems.push(currentProblem);
           }
-        };
-        reader.onerror = reject;
-        reader.readAsText(file);
+          const typeMatch = line.match(/【(.+)】/);
+          currentProblem = {
+            type: typeMatch ? typeMatch[1] : '未知类型',
+            statement: '',
+            options: [],
+            answer: '',
+            score: 0,
+            difficulty: 3,
+            tags: ['智能导入']
+          };
+          inOptions = false;
+          options = [];
+          currentOption = null;
+          console.log(`第${index+1}行: 发现新题目, 类型: ${currentProblem.type}`);
+        }
+        // 识别题干
+        else if (currentProblem && !currentProblem.statement && !inOptions) {
+          currentProblem.statement = line;
+          console.log(`第${index+1}行: 题干内容: ${line}`);
+        }
+        // 识别选项开始 (支持A.或1.等格式)
+        else if (currentProblem && line.match(/^([A-Z]|\d+)\./)) {
+          inOptions = true;
+          const optionKey = line.match(/^([A-Z]|\d+)\./)[1];
+          currentOption = {
+            key: optionKey,
+            content: line.substring(optionKey.length + 1).trim()
+          };
+          options.push(currentOption);
+          console.log(`第${index+1}行: 选项${optionKey}: ${currentOption.content}`);
+        }
+        // 识别答案 (支持多种格式)
+        else if (currentProblem && line.match(/^(答案|正确答案)[：:]\s*(.+)/)) {
+          const answerMatch = line.match(/^(答案|正确答案)[：:]\s*(.+)/);
+          let answer = answerMatch[2].trim();
+          // 如果是多选题，将多个答案用逗号分隔
+          if (currentProblem.type === '多选题' && answer.match(/[A-Za-z]+/)) {
+            answer = answer.split('').join(', ');
+          }
+          currentProblem.answer = answer;
+          currentProblem.options = options;
+          inOptions = false;
+          console.log(`第${index+1}行: 答案: ${currentProblem.answer}`);
+        }
+        // 识别分数 (支持多种格式)
+        else if (currentProblem && line.match(/(\d+)\s*分/)) {
+          const scoreMatch = line.match(/(\d+)\s*分/);
+          currentProblem.score = parseInt(scoreMatch[1]);
+          console.log(`第${index+1}行: 分数: ${currentProblem.score}`);
+        }
+        // 累积题目描述或选项内容
+        else if (currentProblem) {
+          if (inOptions && currentOption) {
+            currentOption.content += '\n' + line;
+            console.log(`第${index+1}行: 追加选项内容: ${line}`);
+          } else if (!inOptions) {
+            currentProblem.statement += '\n' + line;
+            console.log(`第${index+1}行: 追加题干内容: ${line}`);
+          }
+        }
       });
+
+      if (currentProblem) {
+        problems.push(currentProblem);
+      }
+
+      console.log('解析结果:', problems);
+      return problems;
     },
 
     async handleBatchUploadSuccess(response, file, fileList) {
@@ -361,6 +411,190 @@ export default {
     },
     handleUploadExceed(files, fileList) {
       this.$message.warning(`当前限制选择 10 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`);
+    },
+
+    // 处理Word文件上传
+    async handleWordUpload(file) {
+      const loading = this.$loading({
+        lock: true,
+        text: '正在解析Word文件...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      });
+
+      try {
+        const arrayBuffer = await this.readFileAsArrayBuffer(file.raw);
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const text = result.value;
+
+        // 解析文本为题目
+        const problems = this.parseWordTextToProblems(text);
+
+        if (problems.length === 0) {
+          this.$message.warning('未在Word文件中找到有效题目');
+          return;
+        }
+
+        console.log('解析到的题目:', problems); // 调试日志
+        this.parsedProblems = problems;
+        this.activeTab = 'smart';
+        this.$message.success(`成功解析 ${problems.length} 道题目`);
+
+        // 更详细的调试日志
+        console.group('智能导入调试信息');
+        console.log('当前parsedProblems:', this.parsedProblems);
+        console.log('ProblemTable props:', {
+          problems: this.parsedProblems,
+          showType: true,
+          showOptions: true,
+          showAnswer: true
+        });
+        console.log('DOM更新前检查表格元素:', document.querySelector('.el-table'));
+
+        this.$nextTick(() => {
+          console.log('DOM更新后检查表格元素:', document.querySelector('.el-table'));
+          console.log('ProblemTable组件实例:', this.$refs.problemTable);
+          console.groupEnd();
+        });
+      } catch (error) {
+        this.$message.error(`Word文件解析失败: ${error.message}`);
+      } finally {
+        loading.close();
+      }
+    },
+
+    readFileAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    },
+
+    // 删除智能导入的题目
+    removeProblem(index) {
+      this.parsedProblems.splice(index, 1);
+    },
+
+    // 删除手动添加的题目
+    removeManualProblem(index) {
+      this.problemsManual.splice(index, 1);
+    },
+
+    // 清空智能导入的题目
+    clearParsedProblems() {
+      this.parsedProblems = [];
+    },
+
+    // 清空手动添加的题目
+    clearManualProblems() {
+      this.problemsManual = [];
+    },
+
+    // 处理题目编辑
+    handleEditProblem(problem) {
+      this.$prompt('请输入标签，多个标签用逗号分隔', '编辑题目标签', {
+        inputValue: problem.tags.join(','),
+        inputValidator: (value) => {
+          if (!value || value.trim() === '') {
+            return '标签不能为空';
+          }
+          return true;
+        }
+      }).then(({ value }) => {
+        problem.tags = value.split(',').map(tag => tag.trim());
+        this.$message.success('标签修改成功');
+      }).catch(() => {
+        this.$message.info('已取消编辑');
+      });
+    },
+
+    // 保存所有修改
+    handleSaveAllProblems(problems) {
+      this.parsedProblems = problems;
+      this.$message.success('所有修改已保存');
+    },
+
+    // 批量删除题目
+    handleBatchRemove(selectedProblems) {
+      this.$confirm(`确定要删除选中的 ${selectedProblems.length} 道题目吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        const problemIds = selectedProblems.map(p => p.id || p.tempId);
+        this.parsedProblems = this.parsedProblems.filter(
+            p => !problemIds.includes(p.id || p.tempId)
+        );
+        this.$message.success(`成功删除 ${selectedProblems.length} 道题目`);
+      }).catch(() => {
+        this.$message.info('已取消删除');
+      });
+    },
+
+    // 提交智能导入的题目
+    async submitParsedProblems() {
+      if (this.parsedProblems.length === 0) {
+        this.$message.warning('没有可提交的题目');
+        return;
+      }
+
+      this.isSubmitting = true;
+      try {
+        const res = await newRequest.post('/api/problems/batch-create', {
+          problems: this.parsedProblems,
+          creator_id: this.user.id
+        });
+
+        if (res.status === 200) {
+          this.$notify({
+            title: '成功',
+            message: `成功添加 ${res.data.count} 道题目`,
+            type: 'success',
+            duration: 3000
+          });
+          this.parsedProblems = [];
+        } else {
+          this.$message.error(res.message || '题目添加失败');
+        }
+      } catch (error) {
+        this.$message.error(`提交失败: ${error.message}`);
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+
+    // 提交手动添加的题目
+    async submitManualProblems() {
+      if (this.problemsManual.length === 0) {
+        this.$message.warning('没有可提交的题目');
+        return;
+      }
+
+      this.isSubmitting = true;
+      try {
+        const res = await newRequest.post('/api/problems/batch-create', {
+          problems: this.problemsManual,
+          creator_id: this.user.id
+        });
+
+        if (res.status === 200) {
+          this.$notify({
+            title: '成功',
+            message: `成功添加 ${res.data.count} 道题目`,
+            type: 'success',
+            duration: 3000
+          });
+          this.problemsManual = [];
+        } else {
+          this.$message.error(res.message || '题目添加失败');
+        }
+      } catch (error) {
+        this.$message.error(`提交失败: ${error.message}`);
+      } finally {
+        this.isSubmitting = false;
+      }
     },
     showConfirmDialog() {
       this.$refs.problemForm.validate(valid => {
@@ -492,57 +726,43 @@ Python是一种解释型语言
   margin-bottom: 10px;
 }
 
-/deep/ .el-textarea__inner {
-  resize: none;
-}
-</style>
-
-<style scoped>
-.container {
+.smart-import-container {
   padding: 20px;
-  min-height: calc(100vh - 60px);
 }
 
-.add-problem {
-  width: 60%;
-  margin: 0 auto;
-  background-color: #fff;
-  padding: 20px;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  min-height: 600px;
-}
-
-.form-buttons {
-  text-align: center;
+.import-actions {
   margin-top: 20px;
+  text-align: center;
 }
 
-.el-tag + .el-tag {
-  margin-left: 10px;
-}
-
-.button-new-tag {
-  margin-left: 10px;
-  height: 32px;
-  line-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.input-new-tag {
-  width: 90px;
-  margin-left: 10px;
-  vertical-align: bottom;
-}
-
-.dialog-footer {
-  text-align: right;
-  padding-top: 20px;
-}
-
-/deep/ .el-textarea__inner {
+::v-deep .el-textarea__inner {
   resize: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+::v-deep .el-table .cell {
+  padding: 8px 12px;
+}
+
+/* 调整题目列表各列宽度 */
+::v-deep .el-table__body-wrapper .el-table__body td:nth-child(3) .cell {
+  min-width: 300px;
+  max-width: 400px;
+  white-space: pre-wrap;
+}
+
+::v-deep .el-table__body-wrapper .el-table__body td:nth-child(4) .cell {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+::v-deep .el-table__body-wrapper .el-table__body td:nth-child(5) .cell {
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

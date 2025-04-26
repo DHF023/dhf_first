@@ -1,0 +1,22 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- 树干 -->
+  <rect x="95" y="120" width="10" height="80" fill="#8B4513"/>
+
+  <!-- 树冠 -->
+  <path id="tree" d="M100,20 Q60,50 60,90 Q60,130 100,150 Q140,130 140,90 Q140,50 100,20 Z" fill="#228B22"/>
+
+  <!-- 落叶 -->
+  <circle id="leaf1" cx="80" cy="110" r="5" fill="#FFA500">
+    <animateTransform attributeName="transform" type="translate" values="0,0; 2,-3; 4,-6; 6,-9; 8,-12" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle id="leaf2" cx="120" cy="90" r="4" fill="#FF8C00">
+    <animateTransform attributeName="transform" type="translate" values="0,0; 3,-2; 6,-4; 9,-6; 12,-8" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  <circle id="leaf3" cx="90" cy="70" r="6" fill="#FF4500">
+    <animateTransform attributeName="transform" type="translate" values="0,0; -2,-3; -4,-6; -6,-9; -8,-12" dur="6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 树晃动动画 -->
+  <animateTransform xlink:href="#tree" attributeName="transform" type="rotate" values="0,100,100; 2,100,100; 0,100,100; -2,100,100; 0,100,100" dur="8s" repeatCount="indefinite"/>
+</svg>
