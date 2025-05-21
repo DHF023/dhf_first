@@ -7,21 +7,34 @@ const request = axios.create({
 })
 
 // request 拦截器
-// 可以自请求发送前对请求做一些处理
-// 比如统一加token，对请求参数统一加密
 request.interceptors.request.use(config => {
-
+    // 设置默认Content-Type
     config.headers['Content-Type'] = 'application/json;charset=utf-8';
 
-    const user = localStorage.getItem("user");
-    if (user) {
-        config.headers['token'] = JSON.parse(user).token;
+    // 增强token处理逻辑
+    try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            // 双重验证确保token存在且有效
+            if (user?.token && typeof user.token === 'string' && user.token.trim()) {
+                config.headers['token'] = user.token.trim();
+            } else {
+                console.warn('无效的token格式:', user.token);
+                // 可以在这里跳转到登录页
+                // window.location.href = '/login';
+            }
+        }
+    } catch (e) {
+        console.error('解析用户信息异常:', e);
+        // 清除无效的本地存储
+        localStorage.removeItem("user");
     }
 
-    return config
+    return config;
 }, error => {
-    console.error('响应拦截器中的错误:', error); // 更详细的错误日志
-    return Promise.reject(error)
+    console.error('请求拦截器异常:', error);
+    return Promise.reject(error);
 });
 
 // response 拦截器

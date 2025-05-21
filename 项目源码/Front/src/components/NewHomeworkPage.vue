@@ -58,7 +58,7 @@
           </el-tab-pane>
         </el-tabs>
         <div class="form-footer">
-          <el-button @click="cancel">取消</el-button>
+          <el-button @click="cancel"><span style="color: #333 !important;">取消</span></el-button>
           <el-button type="primary" @click="submitHomework">提交作业</el-button>
         </div>
       </div>

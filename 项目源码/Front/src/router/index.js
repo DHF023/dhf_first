@@ -1,36 +1,11 @@
-
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 
-// 引入页面组件
+// 核心组件静态导入
 import Login from '@/components/Login.vue';
 import Register from '@/components/Register.vue';
-import ForgetPassword from "@/components/ForgetPassword";
 import Layout from '@/Layout';
 import Home from '@/views/Home.vue';
-import Admin from '@/components/Admin.vue'
-import ProblemList from '@/components/ProblemList.vue';
-import Problem from "@/components/Problem";
-import CompetitionList from "@/components/CompetitionList";
-import Competition from "@/components/Competition";
-import CompetitionProblemList from "@/components/CompetitionProblmeList";
-import CompetitionRecord from "@/components/CompetitionRecord";
-import CompetitionRank from "@/components/CompetitionRank";
-import CompetitionUsers from "@/components/CompetitionUsers";
-import CompetitionProblem from "@/components/CompetitionProblem";
-import QACenter from '@/components/QACenter.vue';
-import PersonalCenter from "@/components/PersonalCenter";
-import UpdatePassword from "@/components/UpdataPassword";
-import Homework from "@/components/Homework";
-import NewHomeworkPage from "@/components/NewHomeworkPage";
-import Examination from "@/components/Examination";
-import NewExaminationPage from "@/components/NewExaminationPage";
-import NewCompetitionPage from "@/components/NewCompetitionPage";
-import EditCompetitionPage from "@/components/EditCompetitionPage";
-import ManualAddProblem from '@/components/ManualAddProblem.vue';
-import AutoAddProblem from '@/components/AutoAddProblem.vue';
-import AddProblem from '@/components/AddProblem.vue';
-import EditProblem from '@/components/EditProblem.vue';
 
 Vue.use(VueRouter);
 
@@ -47,11 +22,6 @@ const routes = [
     component: Register
   },
   {
-    path: '/forget-password',
-    name: 'ForgetPassword',
-    component: ForgetPassword
-  },
-  {
     path: "/",
     name: 'layout',
     component: Layout,
@@ -62,44 +32,44 @@ const routes = [
         component: Home
       },
       {
-        path: '/admin',
-        name: 'Admin',
-        component: Admin
+        path: '/user',
+        name: 'User',
+        component: () => import('@/components/User.vue')
       },
       {
         path: '/problem-list',
         name: 'ProblemList',
-        component: ProblemList
+        component: () => import('@/components/ProblemList.vue')
       },
       {
         path: '/competition-list',
         name: 'CompetitionList',
-        component: CompetitionList
+        component: () => import('@/components/CompetitionList.vue')
       },
       {
         path: '/competition/:id',
         name: 'Competition',
-        component: Competition,
+        component: () => import('@/components/Competition.vue'),
         children: [
           {
             path: 'list',
             name: 'List',
-            component: CompetitionProblemList,
+            component: () => import('@/components/CompetitionProblmeList.vue'),
           },
           {
             path: 'record',
             name: 'Record',
-            component: CompetitionRecord,
+            component: () => import('@/components/CompetitionRecord.vue'),
           },
           {
             path: 'rank',
             name: 'Rank',
-            component: CompetitionRank,
+            component: () => import('@/components/CompetitionRank.vue'),
           },
           {
             path: 'users',
             name: 'Users',
-            component: CompetitionUsers,
+            component: () => import('@/components/CompetitionUsers.vue'),
           },
           {
             path: '',
@@ -110,7 +80,7 @@ const routes = [
       {
         path: '/competition/:contestId/competition-problem/:problemId',
         name: 'CompetitionProblem',
-        component: CompetitionProblem
+        component: () => import('@/components/CompetitionProblem.vue')
       },
       {
         path: '/homework-analysis',
@@ -130,80 +100,119 @@ const routes = [
       {
         path: '/qa-center',
         name: 'QACenter',
-        component: QACenter
+        component: () => import('@/components/QACenter.vue')
       },
       {
         path: '/personal-center',
         name: 'PersonalCenter',
-        component: PersonalCenter
+        component: () => import('@/components/PersonalCenter.vue')
       },
       {
         path: '/update-password',
         name: 'updatePassword',
-        component: UpdatePassword
+        component: () => import('@/components/UpdataPassword.vue')
       },
       {
         path: '/problem/:id',
         name: 'Problem',
-        component: Problem,
+        component: () => import('@/components/Problem.vue'),
       },
       {
         path: '/homework',
         name: 'Homework',
-        component: Homework,
+        component: () => import('@/components/Homework.vue'),
       },
       {
         path: '/new-homework-page',
         name: 'NewHomeworkPage',
-        component: NewHomeworkPage,
+        component: () => import('@/components/NewHomeworkPage.vue'),
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
       },
       {
         path: '/examination',
         name: 'Examination',
-        component: Examination,
+        component: () => import('@/components/Examination.vue'),
       },
       {
         path: '/new-examination-page',
         name: 'NewExaminationPage',
-        component: NewExaminationPage,
+        component: () => import('@/components/NewExaminationPage.vue'),
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
       },
       {
         path: '/new-competition-page',
         name: 'NewCompetitionPage',
-        component: NewCompetitionPage,
+        component: () => import('@/components/NewCompetitionPage.vue'),
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
       },
       {
         path: '/edit-competition-page/:contestId',
         name: 'EditCompetitionPage',
-        component: EditCompetitionPage,
-        props: true
+        component: () => import('@/components/EditCompetitionPage.vue'),
+        props: true,
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
       },
       {
         path: '/manual-add-problem',
         name: 'ManualAddProblem',
-        component: ManualAddProblem,
+        component: () => import('@/components/ManualAddProblem.vue'),
       },
       {
         path: '/auto-add-problem',
         name: 'AutoAddProblem',
-        component: AutoAddProblem,
+        component: () => import('@/components/AutoAddProblem.vue'),
       },
       {
         path: '/add-problem',
         name: 'AddProblem',
-        component: AddProblem,
+        component: () => import('@/components/AddProblem.vue'),
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
       },
       {
         path: '/edit-problem/:problemId',
         name: 'EditProblem',
-        component: EditProblem,
-        props: true
+        component: () => import('@/components/EditProblem.vue'),
+        props: true,
+        meta: { roles: ['ROLE_ADMIN', '教师'] }
+      },
+      {
+        path: '/courses',
+        name: 'CourseList',
+        component: () => import('@/components/CourseList.vue'),
+      },
+      {
+        path: '/course/:courseId/:tabName?',
+        name: 'CourseDetail',
+        component: () => import('@/components/CourseDetail.vue'),
+        meta: {
+          roles: ['ROLE_ADMIN', 'ROLE_TEACHER', 'ROLE_STUDENT'],
+          requiredAuth: true
+        },
+        children: [
+          {
+            path: '',
+            name: 'CourseDefault',
+            component: () => import('@/components/CourseDetail.vue')
+          },
+          {
+            path: 'home',
+            name: 'CourseHome',
+            component: () => import('@/components/CourseDetail.vue')
+          }
+        ]
       }
     ]
   },
 ]
 
 // 创建路由实例
+// 添加404路由
+routes.push({
+  path: '*',
+  name: 'NotFound',
+  component: () => import('@/components/NotFound.vue')
+});
+
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
@@ -212,47 +221,45 @@ const router = new VueRouter({
 
 // 路由守卫，用于权限控制
 router.beforeEach((to, from, next) => {
+  console.log(`导航从 ${from.path} 到 ${to.path}`);
+
   const user = localStorage.getItem('user');
   let userRole = null;
 
   if (user) {
-    const parsedUser = JSON.parse(user);
-    userRole = parsedUser.role; // 从用户对象中获取角色
+    try {
+      const parsedUser = JSON.parse(user);
+      userRole = parsedUser.role === '教师' ? 'ROLE_TEACHER' :
+                parsedUser.role === '学生' ? 'ROLE_STUDENT' :
+                parsedUser.role || parsedUser.power;
+    } catch (e) {
+      console.error('解析用户数据失败:', e);
+    }
   }
 
-  // 定义需要特定角色的路由
-  const roleRequiredRoutes = {
-    '/new-homework-page': ['ROLE_ADMIN', '教师'],
-    '/new-examination-page': ['ROLE_ADMIN', '教师'],
-    '/new-competition-page': ['ROLE_ADMIN', '教师'],
-    '/edit-competition-page/:contestId': ['ROLE_ADMIN', '教师'],
-    '/add-problem': ['ROLE_ADMIN', '教师'],
-    '/edit-problem/:problemId': ['ROLE_ADMIN', '教师'],
-  };
+  // 检查是否需要认证
+  if (to.matched.some(record => record.meta.requiredAuth)) {
+    if (!user) {
+      console.log('需要登录');
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+      return;
+    }
 
-  // 检查用户登录状态和角色权限
-  if (!user && !['/', '/login', '/register', '/forget-password'].includes(to.path)) {
-    // 未登录用户尝试访问非公开页面
-    Vue.prototype.$confirm('您尚未登录，无法查看该页面。是否前往登录？', '提示', {
-      confirmButtonText: '前往登录',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(() => {
-      next('/login'); // 用户选择前往登录
-    }).catch(() => {
-      next(false); // 用户选择取消，留在当前页面
-    });
-  } else if (roleRequiredRoutes[to.path] && !roleRequiredRoutes[to.path].includes(userRole)) {
-    // 用户角色不满足访问目标路由所需的角色要求
-    Vue.prototype.$alert('您没有权限访问该页面。', '权限不足', {
-      confirmButtonText: '确定',
-      type: 'error'
-    }).then(() => {
-      next('/'); // 重定向到首页
-    });
-  } else {
-    next(); // 其他情况，继续执行路由导航
+    // 检查角色权限
+    if (to.meta.roles) {
+      const hasPermission = to.meta.roles.includes(userRole);
+      if (!hasPermission) {
+        console.warn('权限不足');
+        next({ path: '/' });
+        return;
+      }
+    }
   }
+
+  next();
 });
 
 export default router;

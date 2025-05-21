@@ -2,15 +2,15 @@ package com.example.entity;
 
 import javax.persistence.*;
 
-@Table(name = "admin")
-public class Admin {
+@Table(name = "user")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name")  //数据库中的字段名
-    private String name;    //java中的实体名
+    @Column(name = "name")
+    private String name;
     @Column(name = "password")
     private String password;
     @Column(name = "sex")
@@ -21,8 +21,8 @@ public class Admin {
     private String phone;
     @Column(name = "role")
     private String role;
-    @Column(name = "student_id")
-    private String student_id;
+    @Column(name = "work_id")
+    private String work_id;
     @Column(name = "avatar")
     private String avatar;
     @Column(name = "email")
@@ -86,12 +86,12 @@ public class Admin {
         this.role = role;
     }
 
-    public String getStudent_id() {
-        return student_id;
+    public String getWork_id() {
+        return work_id;
     }
 
-    public void setStudent_id(String student_id) {
-        this.student_id = student_id;
+    public void setWork_id(String work_id) {
+        this.work_id = work_id;
     }
 
     public String getToken() {

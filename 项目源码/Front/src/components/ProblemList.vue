@@ -33,7 +33,14 @@
           />
           <el-button
               type="warning"
-              style="margin-left: 10px"
+              style="
+                margin-left: 10px;
+                background: linear-gradient(135deg, #ffba00 0%, #ff9900 100%);
+                border: none;
+                color: white;
+                box-shadow: 0 2px 6px rgba(255, 153, 0, 0.3);
+                transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+              "
               @click="searchProblems"
           >
             搜索
@@ -42,7 +49,14 @@
           <el-button
               v-if="isAdminOrTeacher"
               type="primary"
-              style="margin-left: 10px"
+              style="
+                margin-left: 10px;
+                background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+                border: none;
+                color: white;
+                box-shadow: 0 2px 6px rgba(74, 94, 208, 0.3);
+                transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+              "
               @click="openAddProblemWindow"
           >
             添加题目
@@ -50,7 +64,14 @@
           <el-button
               v-if="isAdminOrTeacher"
               type="primary"
-              style="margin-left: 10px"
+              style="
+                margin-left: 10px;
+                background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+                border: none;
+                color: white;
+                box-shadow: 0 2px 6px rgba(74, 94, 208, 0.3);
+                transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+              "
               @click="toggleEditMode"
           >
             {{ isEditMode ? '退出编辑' : '编辑题目' }}
@@ -58,7 +79,15 @@
         </div>
         <div class="table">
           <!-- 非编辑模式下的题目列表 -->
-          <el-table v-if="!isEditMode" :data="paginatedProblems">
+          <el-table
+              v-if="!isEditMode"
+              :data="paginatedProblems"
+              v-loading="loading"
+              element-loading-text="加载中..."
+          >
+            <template #empty>
+              <el-empty description="暂无题目数据"></el-empty>
+            </template>
             <el-table-column prop="state" label="状态" width="70" />
             <el-table-column prop="id" label="编号" width="100" />
             <el-table-column prop="title" label="题目名称" width="250">
@@ -150,14 +179,21 @@
                 {{ scope.row.pass }}%
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="100">
+            <el-table-column label="操作" width="180">
               <template #default="scope">
                 <el-button
                     type="text"
                     size="mini"
                     @click="editProblem(scope.row.id)"
                 >
-                  编辑
+                  <span style="color: #528fff">编辑</span>
+                </el-button>
+                <el-button
+                    type="text"
+                    size="mini"
+                    @click="confirmDeleteProblem(scope.row.id)"
+                >
+                  <span style="color: #ff4d4f">删除</span>
                 </el-button>
               </template>
             </el-table-column>
@@ -189,6 +225,7 @@ export default {
     return {
       problems: [], // 题目列表
       total: 0, // 题目总数
+      loading: false, // 加载状态
       hotTags: [
         { name: '动态规划', count: 56, type: '' },
         { name: '树结构', count: 42, type: 'success' },
@@ -223,7 +260,7 @@ export default {
   computed: {
     // 判断当前用户是否为管理员或教师
     isAdminOrTeacher() {
-      return this.user.role === '教师' || this.user.role === 'ROLE_ADMIN';
+      return this.user.role === 'ROLE_TEACHER' || this.user.role === 'ROLE_ADMIN';
     },
     // 计算当前分页的题目列表
     paginatedProblems() {
@@ -280,6 +317,7 @@ export default {
     },
     // 获取所有题目
     fetchAllProblems() {
+      this.loading = true;
       const requestBody = {
         ...this.searchParams,
       };
@@ -299,25 +337,40 @@ export default {
           })
           .catch(error => {
             console.error('获取所有题目列表失败:', error);
-            this.$message.error('获取所有题目列表失败，请稍后重试');
+            this.problems = [];
+            this.total = 0;
+          })
+          .finally(() => {
+            this.loading = false;
           });
     },
     // 根据题目ID列表获取题目详情
     fetchProblemDetails(problemIds) {
       const promises = problemIds.map(problemId => {
         const requestBody = {
-          problem_id: problemId,
+          problem_id: Number(problemId)
         };
         return newRequest.post('/api/problem/statement/get', requestBody)
-            .then(response => response)
+            .then(response => {
+              // 确保返回数据格式与Problem.vue一致
+              return {
+                ...response,
+                id: problemId,
+                title: response.title || '未命名题目',
+                tags: response.tags || [],
+                difficulty: response.difficulty || '未知',
+                pass: response.pass_rate ? Math.round(response.pass_rate * 100) : 0
+              };
+            })
             .catch(error => {
               console.error(`获取题目ID=${problemId}的详细信息失败:`, error);
               return {
                 id: problemId,
-                title: '无法获取标题',
+                title: '获取题目失败',
                 tags: [],
-                is_public: false,
-                // 其他字段设置为默认值或null
+                difficulty: '未知',
+                pass: 0,
+                state: 'error'
               };
             });
       });
@@ -326,8 +379,16 @@ export default {
             this.problems = responses;
           })
           .catch(error => {
-            console.error('并行获取题目详细信息时发生错误:', error);
-            this.$message.error('获取题目详细信息失败，请稍后重试');
+            console.error('获取题目详细信息时发生错误:', error);
+            this.$message.error('获取题目信息失败，请稍后重试');
+            this.problems = problemIds.map(id => ({
+              id,
+              title: '获取题目失败',
+              tags: [],
+              difficulty: '未知',
+              pass: 0,
+              state: 'error'
+            }));
           });
     },
     // 打开添加题目窗口
@@ -343,12 +404,56 @@ export default {
       const url = `/edit-problem/${problemId}`;
       window.open(url, '_blank');
     },
+
+    // 确认删除题目
+    confirmDeleteProblem(problemId) {
+      this.$confirm('确定要删除这个题目吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.deleteProblem(problemId);
+      }).catch(() => {
+        this.$message.info('已取消删除');
+      });
+    },
+
+    // 删除题目
+    deleteProblem(problemId) {
+      this.loading = true;
+      newRequest.post(`/api/questions/delete/${problemId}`)
+          .then(response => {
+            console.log(response);
+            this.$message.success('删除成功');
+            this.fetchAllProblems(); // 刷新题目列表
+          })
+          .catch(error => {
+            console.error('删除题目失败:', error);
+            if (error.response) {
+              if (error.response.status === 404) {
+                this.$message.error('题目不存在或已被删除');
+              } else {
+                this.$message.error(`删除失败: ${error.response.data.message || '服务器错误'}`);
+              }
+            } else {
+              this.$message.error('网络错误，请检查连接后重试');
+            }
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+    },
   },
 };
 </script>
 
 <style scoped>
 /* 题目列表组件样式 */
+.empty-tip {
+  margin-top: 60px;
+  text-align: center;
+}
+
 .problem-list {
   overflow: auto;
   min-height: calc(100vh - 60px);

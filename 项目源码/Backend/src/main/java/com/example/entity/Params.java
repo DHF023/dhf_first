@@ -3,7 +3,7 @@ package com.example.entity;
 public class Params {
 
     private String name;
-    private String student_id;
+    private String work_id;
     private String sex;
     private String role;
     private Integer pageNum;
@@ -17,12 +17,12 @@ public class Params {
         this.name = name;
     }
 
-    public String getStudent_id() {
-        return student_id;
+    public String getWork_id() {
+        return work_id;
     }
 
-    public void setStudent_id(String student_id) {
-        this.student_id = student_id;
+    public void setWork_id(String work_id) {
+        this.work_id = work_id;
     }
 
     public String getRole() {

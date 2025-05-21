@@ -4,18 +4,37 @@
       <div class="search">
         <el-input v-model="searchTitle" clearable style="width: 150px" placeholder="请输入比赛名称"></el-input>
         <el-input v-model="searchHolderName" clearable style="width: 150px; margin-left: 10px;" placeholder="请输入主办方名称"></el-input>
-        <el-button style="margin-left: 10px" type="warning" @click="filterContests">搜索</el-button>
+        <el-button style="
+          margin-left: 10px;
+          background: linear-gradient(135deg, #ffba00 0%, #ff9900 100%);
+          border: none;
+          color: white;
+          box-shadow: 0 2px 6px rgba(255, 153, 0, 0.3);
+          transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        " @click="filterContests">搜索</el-button>
         <el-button
-            style="margin-left: 10px"
-            type="primary"
+            style="
+              margin-left: 10px;
+              background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+              border: none;
+              color: white;
+              box-shadow: 0 2px 6px rgba(74, 94, 208, 0.3);
+              transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            "
             @click="navigateToNewCompetitionPage"
-            v-if="user.role === '教师' || user.role === 'ROLE_ADMIN'"
+            v-if="user.role === 'ROLE_TEACHER' || user.role === 'ROLE_ADMIN'"
         >
           发起比赛
         </el-button>
         <el-button
-            style="margin-left: 10px"
-            type="primary"
+            style="
+              margin-left: 10px;
+              background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+              border: none;
+              color: white;
+              box-shadow: 0 2px 6px rgba(74, 94, 208, 0.3);
+              transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            "
             @click="toggleEditMode"
             v-if="isAdmin || isContestHolder"
         >
@@ -23,7 +42,12 @@
         </el-button>
       </div>
       <div class="table">
-        <el-table v-if="!isEditMode" :data="paginatedData" @filter-change="filterChange">
+        <el-table v-if="!isEditMode" :data="paginatedData" @filter-change="filterChange" v-loading="loading" element-loading-text="加载中...">
+          <template #empty>
+            <div class="empty-tip">
+              <el-empty description="暂无比赛数据"></el-empty>
+            </div>
+          </template>
           <el-table-column prop="contest_title" label="比赛名称" width="260">
             <template v-slot="scope">
               <a href="javascript:void(0);" @click="checkAndOpenCompetitionDetail(scope.row.contest_id)" class="title-link">{{ scope.row.contest_title }}</a>
@@ -42,7 +66,12 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-table v-else :data="paginatedData" @filter-change="filterChange">
+        <el-table v-else :data="paginatedData" @filter-change="filterChange" v-loading="loading" element-loading-text="加载中...">
+          <template #empty>
+            <div class="empty-tip">
+              <el-empty description="暂无比赛数据"></el-empty>
+            </div>
+          </template>
           <!-- 编辑模式下的表格，包含操作列 -->
           <el-table-column prop="contest_title" label="比赛名称" width="260">
             <template v-slot="scope">
@@ -68,7 +97,7 @@
                   type="text"
                   @click="editContest(scope.row.contest_id)"
               >
-                编辑
+                <span style="color: #528fff">编辑</span>
               </el-button>
             </template>
           </el-table-column>
@@ -105,6 +134,7 @@ export default {
       isEditMode: false,
       contestUserIds: {},
       stateFilters: [], // 新增状态筛选条件存储
+      loading: false,
     }
   },
   computed: {

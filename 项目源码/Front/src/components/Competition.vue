@@ -58,8 +58,10 @@ export default {
   },
   methods: {
     navigateTo(routeName) {
-      // 导航到指定路由
-      this.$router.push({ name: routeName, params: { id: this.id } });
+      // 避免重复导航到当前路由
+      if (this.$route.name !== routeName) {
+        this.$router.push({ name: routeName, params: { id: this.id } });
+      }
     },
     fetchContestInfo() {
       // 获取比赛信息
@@ -73,6 +75,7 @@ export default {
         .catch(error => {
           this.error = error;
           this.loading = false;
+          this.competition.contest_title = `比赛 ${this.id}`; // 设置默认标题
           console.error('Failed to fetch contest info:', error);
         });
     }

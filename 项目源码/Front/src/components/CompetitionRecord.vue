@@ -2,7 +2,12 @@
   <div class="table-wrapper">
     <!-- 表格外层容器，用于Flexbox布局和水平居中 -->
     <div class="table-container">
-      <el-table :data="submissions" v-if="!loading && !error" border>
+      <el-table
+        :data="submissions"
+        border
+        v-loading="loading"
+        element-loading-text="加载中..."
+      >
         <!-- 表格列定义 -->
         <el-table-column prop="submission_id" label="提交ID" width="60"></el-table-column>
         <el-table-column prop="problem_id" label="题目ID" width="60"></el-table-column>
@@ -12,9 +17,10 @@
         <el-table-column prop="status" label="状态" width="120"></el-table-column>
         <el-table-column prop="time_used" label="耗时(ms)" width="80"></el-table-column>
         <el-table-column prop="memory_used" label="内存使用(MB)" width="100"></el-table-column>
+        <template #empty>
+          <el-empty description="暂无提交记录"></el-empty>
+        </template>
       </el-table>
-      <div v-if="loading" class="loading">加载中...</div>
-      <div v-if="error" class="error">{{ error.message }}</div>
     </div>
   </div>
 </template>

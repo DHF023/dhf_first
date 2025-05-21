@@ -168,11 +168,11 @@
       <el-button
         @click="$emit('clear')"
         icon="Delete"
-      >清空</el-button>
+      ><span style="color: #333">清空</span></el-button>
       <el-button
         @click="handleSaveAll"
         icon="DocumentAdd"
-      >保存修改</el-button>
+      ><span style="color: #333">保存修改</span></el-button>
     </div>
   </div>
 </template>

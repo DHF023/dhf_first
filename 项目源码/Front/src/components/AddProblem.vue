@@ -53,14 +53,14 @@
                   @keyup.enter.native="handleInputConfirm"
                   @blur="handleInputConfirm"
               ></el-input>
-              <el-button v-else size="small" @click="showInput">+ 新标签</el-button>
+              <el-button v-else size="small" @click="showInput"><span style="color: #333;">+ 新标签</span></el-button>
             </el-form-item>
           </el-form>
 
           <!-- 表单操作按钮 -->
           <div class="form-buttons">
             <el-button type="primary" @click="showConfirmDialog">提交</el-button>
-            <el-button @click="resetForm('problemForm')">重置</el-button>
+            <el-button @click="resetForm('problemForm')"><span style="color: #333 !important;">重置</span></el-button>
           </div>
         </el-tab-pane>
 

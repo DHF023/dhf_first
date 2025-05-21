@@ -2,7 +2,15 @@
   <div>
     <div style="display: flex; justify-content: center;">
       <div class="table">
-        <el-table :data="competitionProblems" border v-if="!loading">
+        <el-table
+          :data="competitionProblems"
+          border
+          v-loading="loading"
+          element-loading-text="加载中..."
+        >
+          <template #empty>
+            <el-empty description="暂无题目数据"></el-empty>
+          </template>
           <el-table-column prop="problem_id" label="#" width="130"></el-table-column>
           <el-table-column prop="problem_title" label="标题">
             <template v-slot="scope">
@@ -16,7 +24,6 @@
             </template>
           </el-table-column>
         </el-table>
-        <div v-else class="loading">加载中...</div>
       </div>
     </div>
 
@@ -26,7 +33,6 @@
       <div><strong>结束时间:</strong> {{ competitionInfo.end_time }}</div>
       <div><strong>比赛信息:</strong> {{ competitionInfo.information }}</div>
     </div>
-    <div v-else-if="error" class="error">{{ error.message }}</div>
   </div>
 </template>
 

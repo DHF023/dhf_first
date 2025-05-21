@@ -1,7 +1,15 @@
 <template>
   <div class="table-wrapper">
     <div class="ranking-table">
-      <el-table :data="rankingList" border v-if="!loading && !error">
+      <el-table
+        :data="rankingList"
+        border
+        v-loading="loading"
+        element-loading-text="加载中..."
+      >
+        <template #empty>
+          <el-empty description="暂无榜单数据"></el-empty>
+        </template>
         <el-table-column prop="rank" label="#" width="50"></el-table-column>
         <el-table-column prop="username" label="用户名" width="180"></el-table-column>
         <el-table-column prop="solved_count" label="解决数" width="50"></el-table-column>
@@ -18,10 +26,7 @@
             {{ scope.row.problem_scores[problem_id] || '未提交' }}
           </template>
         </el-table-column>
-
       </el-table>
-      <div v-if="loading" class="loading">加载中...</div>
-      <div v-if="error" class="error">{{ error.message }}</div>
     </div>
   </div>
 </template>

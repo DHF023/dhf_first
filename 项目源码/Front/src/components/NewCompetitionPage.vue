@@ -62,7 +62,7 @@
         </el-tabs>
         <div class="form-footer">
           <el-button type="primary" @click="showConfirmDialog = true">创建比赛</el-button>
-          <el-button @click="resetForm('competitionForm')">重置</el-button>
+          <el-button @click="resetForm('competitionForm')"><span style="color: #333 !important;">重置</span></el-button>
         </div>
       </div>
     </div>

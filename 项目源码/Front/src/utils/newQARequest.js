@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // 创建一个新的axios对象
 const newQARequest = axios.create({
-    baseURL: 'http://10.98.128.95:5000',
-    timeout: 10000000 // 可选，设置超时时间
+    baseURL: 'http://10.99.199.54:5000',
+    timeout: 100000 // 可选，设置超时时间
 });
 
 // 仅保留请求拦截器

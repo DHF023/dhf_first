@@ -38,11 +38,7 @@
               <el-input v-model="form.age" autocomplete="off" style="width: 200px;" clearable></el-input>
             </el-form-item>
             <el-form-item label="身 份" prop="role">
-              <el-select v-model="form.role" placeholder="请选择" style="width:200px">
-                <el-option label="教 师" value="教师"></el-option>
-                <el-option label="学 生" value="学生"></el-option>
-                <el-option label="管理员" value="ROLE_ADMIN" v-if="user.role === 'ROLE_ADMIN'"></el-option>
-              </el-select>
+              <el-input :value="roleDisplayText" readonly style="width:200px"></el-input>
             </el-form-item>
             <el-form-item label="联系方式" prop="phone">
               <el-input v-model="form.phone" autocomplete="off" style="width: 200px;" clearable></el-input>
@@ -80,6 +76,11 @@ export default {
         role: '', // 用户身份
         email: '', // 用户邮箱
       },
+      roleDisplayMap: {
+        'ROLE_ADMIN': '管理员',
+        'ROLE_TEACHER': '教师',
+        'ROLE_STUDENT': '学生'
+      },
       userSvg, // 用户图标
       rules: {
         // 表单验证规则
@@ -106,6 +107,11 @@ export default {
     this.form.email = this.user.email;
     console.log(JSON.stringify(this.user));
   },
+  computed: {
+    roleDisplayText() {
+      return this.roleDisplayMap[this.form.role] || this.form.role;
+    }
+  },
   methods: {
     // 保存表单数据
     save(formName) {
@@ -119,7 +125,7 @@ export default {
           this.user.role = this.form.role;
           this.user.phone = this.form.phone;
           this.user.email = this.form.email;
-          request.post("/admin", this.user).then(res => {
+          request.post("/user", this.user).then(res => {
             if (res.code === '0') {
               // 保存成功，更新本地存储并重载页面
               this.$message({
@@ -168,6 +174,14 @@ export default {
 .save {
   width: 10%;
   font-size: 16px;
+  background: linear-gradient(90deg, #409EFF, #66B1FF);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.save:hover {
+  background: linear-gradient(90deg, #66B1FF, #409EFF);
+  box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.3);
 }
 
 .avatar {
@@ -184,6 +198,14 @@ export default {
 .upload-button {
   width: 90px;
   height: 33px;
+  background: linear-gradient(90deg, #409EFF, #66B1FF);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+  background: linear-gradient(90deg, #66B1FF, #409EFF);
+  box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.3);
 }
 
 .divider {

@@ -106,7 +106,7 @@ export default {
         const userIds = response;
         const userPromises = userIds.map(async userId => {
           try {
-            const usernameResponse = await request.get(`/admin/${userId}/username`);
+            const usernameResponse = await request.get(`/user/${userId}/username`);
             return {
               user_id: userId,
               user_name: usernameResponse.data
@@ -128,7 +128,7 @@ export default {
     async fetchUserName(userId) {
       // 根据用户ID获取用户名
       try {
-        const response = await request.get(`/admin/${userId}/username`);
+        const response = await request.get(`/user/${userId}/username`);
         return response.data;
       } catch (error) {
         console.error(`Failed to fetch username for user ID ${userId}:`, error);

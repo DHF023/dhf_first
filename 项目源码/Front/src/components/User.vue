@@ -1,10 +1,10 @@
 <template>
-  <div class="admin">
+  <div class="user">
     <div class="main">
       <!-- 搜索区域 -->
       <div class="search">
         <el-input
-          v-model="params.student_id"
+          v-model="params.work_id"
           clearable
           placeholder="请输入学工号"
           style="width: 130px"
@@ -16,22 +16,37 @@
           style="width: 130px; margin-left: 10px"
         />
         <el-button
-          type="warning"
-          style="margin-left: 10px"
+          style="
+            background: linear-gradient(to right, #e6a23c, #ebb563);
+            border: none;
+            color: white;
+            font-weight: bold;
+            margin-left: 10px
+          "
           @click="findBySearch"
         >
           搜索
         </el-button>
         <el-button
-          type="primary"
-          style="margin-left: 10px"
+          style="
+            background: linear-gradient(to right, #409EFF, #66b1ff);
+            border: none;
+            color: white;
+            font-weight: bold;
+            margin-left: 10px
+          "
           @click="add"
         >
           新增
         </el-button>
         <el-button
-          type="danger"
-          style="margin-left: 10px"
+          style="
+            background: linear-gradient(to right, #f56c6c, #f78989);
+            border: none;
+            color: white;
+            font-weight: bold;
+            margin-left: 10px
+          "
           @click="batchDelete"
           :disabled="!hasSelected"
         >
@@ -48,7 +63,7 @@
           @filter-change="handleFilterChange"
         >
           <el-table-column type="selection"></el-table-column>
-          <el-table-column prop="student_id" label="学工号"></el-table-column>
+          <el-table-column prop="work_id" label="学工号"></el-table-column>
           <el-table-column prop="name" label="用户名"></el-table-column>
           <el-table-column
               prop="sex"
@@ -59,12 +74,23 @@
           <el-table-column
               prop="role"
               label="身份"
-              :filters="[{ text: '教师', value: '教师' }, { text: '学生', value: '学生' }]"
+              :formatter="formatRole"
+              :filters="[{ text: '教师', value: 'ROLE_TEACHER' }, { text: '学生', value: 'ROLE_STUDENT' }]"
               :column-key="'role'"
           ></el-table-column>
           <el-table-column label="操作">
             <template slot-scope="scope">
-              <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+              <el-button
+                style="
+                  background: linear-gradient(to right, #409EFF, #66b1ff);
+                  border: none;
+                  color: white;
+                  font-weight: bold;
+                "
+                @click="edit(scope.row)"
+              >
+                编辑
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -93,7 +119,7 @@
           <el-form :model="form">
             <el-form-item label="学工号" label-width="15%">
               <el-input
-                v-model="form.student_id"
+                v-model="form.work_id"
                 autocomplete="off"
                 style="width: 90%"
               />
@@ -136,7 +162,12 @@
           </el-form>
           <div slot="footer" class="dialog-footer">
             <el-button type="warning" @click="dialogFormVisible = false">取 消</el-button>
-            <el-button type="primary" @click="submit">确 定</el-button>
+            <el-button
+              style="background:linear-gradient(to right,#409EFF,#337ecc);border:none;color:white"
+              @click="submit"
+            >
+              确 定
+            </el-button>
           </div>
         </el-dialog>
       </div>
@@ -148,11 +179,11 @@
 import request from '@/utils/request';
 
 export default {
-  name: "Admin",
+  name: "User",
   data() {
     return {
       params: {
-        student_id: '',
+        work_id: '',
         name: '',
         sex: '',
         role: '',
@@ -163,7 +194,7 @@ export default {
       total: 0,
       dialogFormVisible: false,
       form: {},
-      hasSelected: false, // 新增状态变量，用于表示是否有行被选中
+      hasSelected: false,
     };
   },
   created() {
@@ -171,23 +202,19 @@ export default {
   },
   methods: {
     findBySearch() {
-      // 打印请求参数，方便调试
       console.log('Search params:', this.params);
 
-      request.get("/admin/search", { params: this.params })
+      request.get("/user/search", { params: this.params })
           .then(res => {
             if (res.code === '0') {
               this.tableData = res.data.list;
               this.total = res.data.total;
-
-              // 打印响应数据，方便调试
               console.log('Search response:', res.data);
             } else {
               this.$message.error(res.msg);
             }
           })
           .catch(error => {
-            // 捕获请求错误，方便调试
             console.error('Search request error:', error);
             this.$message.error('搜索请求失败，请检查网络或联系管理员');
           });
@@ -209,7 +236,7 @@ export default {
       this.dialogFormVisible = true;
     },
     submit() {
-      request.post("/admin", this.form)
+      request.post("/user", this.form)
           .then(res => {
             if (res.code === '0') {
               this.$message.success('操作成功');
@@ -227,15 +254,13 @@ export default {
         return;
       }
 
-      // 提取选中行的ID
       const idsToDelete = selectedRows.map(row => row.id);
 
-      // 调用批量删除接口
-      request.delete("/admin/batchDelete", { data: idsToDelete })
+      request.delete("/user/batchDelete", { data: idsToDelete })
           .then(res => {
             if (res.code === '0') {
               this.$message.success('批量删除成功');
-              this.findBySearch(); // 刷新表格数据
+              this.findBySearch();
             } else {
               this.$message.error(res.msg);
             }
@@ -246,35 +271,32 @@ export default {
           });
     },
     handleSelectionChange(selection) {
-      // 更新是否有行被选中的状态
       this.hasSelected = selection.length > 0;
     },
+    formatRole(row, column, cellValue) {
+      if (cellValue === 'ROLE_TEACHER') return '教师';
+      if (cellValue === 'ROLE_STUDENT') return '学生';
+      return cellValue;
+    },
     handleFilterChange(filters) {
-      // 检查是否存在 sex 筛选条件，并取第一个值（如果存在）
       if (filters.sex && filters.sex.length > 0) {
         this.params.sex = filters.sex[0];
       } else {
-        // 如果没有选择任何 sex 筛选条件，则清空 sex 参数
         this.params.sex = '';
       }
 
-      // 检查是否存在 role 筛选条件，并取第一个值（如果存在）
       if (filters.role && filters.role.length > 0) {
         this.params.role = filters.role[0];
       } else {
-        // 如果没有选择任何 role 筛选条件，则清空 role 参数
         this.params.role = '';
       }
 
-      // 触发搜索请求
       this.findBySearch();
     },
   },
   watch: {
-    // 监听筛选条件的变化，并重新触发搜索请求
     'params.sex': 'findBySearch',
     'params.role': 'findBySearch',
-    // 监听分页参数的变化，并重新触发搜索请求
     'params.pageNum': 'findBySearch',
     'params.pageSize': 'findBySearch',
   },
@@ -282,7 +304,7 @@ export default {
 </script>
 
 <style scoped>
-.admin {
+.user {
   min-height: calc(100vh - 60px);
   overflow: auto;
   padding: 20px 0;
@@ -296,7 +318,7 @@ export default {
   border: 1px solid #f1f1f1;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
-  width: 60%;
+  width: 65%;
 }
 
 .search {
@@ -304,8 +326,9 @@ export default {
 }
 
 .table {
-  width: 97%;
-  margin: 5px 0 0 15px;
+  width: 100%;
+  padding: 5px 10px 5px 10px;
+  overflow-x: auto;
 }
 
 .block {

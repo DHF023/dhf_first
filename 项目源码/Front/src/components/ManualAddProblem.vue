@@ -28,7 +28,7 @@
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="submitNewProblem('newProblemForm')">添加题目</el-button>
-            <el-button @click="resetForm('newProblemForm')">重置</el-button>
+            <el-button @click="resetForm('newProblemForm')"><span style="color: #333 !important;">重置</span></el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>

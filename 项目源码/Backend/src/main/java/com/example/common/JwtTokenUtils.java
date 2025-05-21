@@ -5,8 +5,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.example.entity.Admin;
-import com.example.service.AdminService;
+import com.example.entity.User;
+import com.example.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -21,15 +21,15 @@ import java.util.Date;
 @Component
 public class JwtTokenUtils {
 
-    private static AdminService staticAdminService;
+    private static UserService staticUserService;
     private static final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
 
     @Resource
-    private AdminService adminService;
+    private UserService userService;
 
     @PostConstruct
     public void setUserService() {
-        staticAdminService = adminService;
+        staticUserService = userService;
     }
 
     /**
@@ -54,7 +54,7 @@ public class JwtTokenUtils {
     /**
      * 获取当前登录的用户信息
      */
-    public static Admin getCurrentUser() {
+    public static User getCurrentUser() {
         String token = null;
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
@@ -67,10 +67,10 @@ public class JwtTokenUtils {
                 return null;
             }
             // 解析token，获取用户的id
-            String adminId = JWT.decode(token).getAudience().get(0);
-            return staticAdminService.findByById(Integer.valueOf(adminId));
+            String userId = JWT.decode(token).getAudience().get(0);
+            return staticUserService.findById(Integer.valueOf(userId));
         } catch (Exception e) {
-            log.error("获取当前登录的管理员信息失败, token={}", token,  e);
+            log.error("获取当前登录的用户信息失败, token={}", token,  e);
             return null;
         }
     }

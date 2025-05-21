@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // 创建一个新的axios对象
 const newRequest = axios.create({
-    baseURL: 'http://58.199.162.141:5000',
-    timeout: 10000 // 可选，设置超时时间
+    baseURL: 'http://58.199.162.47:5000',
+    timeout: 100000 // 可选，设置超时时间
 });
 
 // request 拦截器

@@ -30,7 +30,7 @@
           <el-header style="height: 60px; display: flex;">
             <h2 style="width: 50%">{{ problem.id }} {{ problem.title }}</h2>
           </el-header>
-          <el-row style="margin: 10px 0; padding: 0 20px; display: flex; align-items: center;">
+          <el-row v-if="!hasError && problem.difficulty" style="margin: 10px 0; padding: 0 20px; display: flex; align-items: center;">
             <el-tag :type="difficultyTagType" effect="dark" style="border-radius: 20px; margin-right: 10px;">
               {{ problem.difficulty }}
             </el-tag>
@@ -46,7 +46,8 @@
           </el-row>
           <el-main style="margin-bottom: 30px;">
             <h2>题目描述</h2>
-            <div v-html="problem.statement"></div>
+            <div v-if="!hasError && problem.statement" v-html="problem.statement"></div>
+            <el-empty v-else description="暂无题目描述"></el-empty>
           </el-main>
         </el-container>
       </div>
@@ -84,7 +85,14 @@
                     :value="item"
                 ></el-option>
               </el-select>
-              <el-button type="primary" size="mini" @click="getValue" style="margin-left: 10px;">提交答案</el-button>
+              <el-button type="primary" size="mini" @click="getValue" style="
+                margin-left: 10px;
+                background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+                border: none;
+                color: white;
+                box-shadow: 0 2px 6px rgba(74, 94, 208, 0.3);
+                transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+              ">提交答案</el-button>
             </div>
             <MonacoEditor
                 ref="MonacoEditor"
@@ -95,11 +103,11 @@
           </el-tab-pane>
           <el-tab-pane label="提交文件" name="second">
             <el-upload
-              class="upload-demo"
-              drag
-              action=""
-              multiple
-              style="display: flex; justify-content: center;">
+                class="upload-demo"
+                drag
+                action=""
+                multiple
+                style="display: flex; justify-content: center;">
               <i class="el-icon-upload"></i>
               <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
             </el-upload>
@@ -112,12 +120,12 @@
       </div>
     </div>
     <el-dialog
-      title="提交记录"
-      :visible.sync="dialogVisible"
-      top="0"
+        title="提交记录"
+        :visible.sync="dialogVisible"
+        top="0"
     >
       <div class="dialog-content">
-        <el-table :data="submissionRecords" class="table" height="100%">
+        <el-table :data="submissionRecords" class="table" height="100%" v-loading="isSubmissionsLoading">
           <el-table-column prop="id" label="提交ID"></el-table-column>
           <el-table-column prop="problem_id" label="题目ID"></el-table-column>
           <el-table-column prop="submit_time" label="提交时间"></el-table-column>
@@ -125,6 +133,9 @@
           <el-table-column prop="status" label="状态"></el-table-column>
           <el-table-column prop="time_used" label="耗时(ms)"></el-table-column>
           <el-table-column prop="memory_used" label="内存使用(KB)"></el-table-column>
+          <template #empty>
+            <el-empty description="暂无提交记录"></el-empty>
+          </template>
         </el-table>
       </div>
     </el-dialog>
@@ -146,16 +157,28 @@ export default {
       sets: {
         language: languages,
         theme: {
-          'vs': 'vs',
-          'vs-dark': 'vs-dark',
-          'hc-black': 'hc-black'
+          '浅色': 'vs',
+          '深色': 'vs-dark',
+          '高对比度': 'hc-black'
         }
       },
       opts: {
         value: '',
         readOnly: false,
         language: 'cpp',
-        theme: 'vs'
+        theme: 'vs',
+        automaticLayout: true,
+        minimap: { enabled: true },
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: true,
+        folding: true,
+        multiCursorModifier: 'alt',
+        scrollBeyondLastLine: false,
+        fontSize: 14,
+        lineNumbers: 'on',
+        tabSize: 2,
+        renderWhitespace: 'selection',
+        wordWrap: 'on'
       },
       isSubmit: false,
       isSidebarCollapsed: false,
@@ -163,6 +186,10 @@ export default {
       submissionRecords: [], // 用于保存提交记录
       problemData: null,
       id: null, // 当前题目ID
+      isLoading: false,
+      hasError: false,
+      isSubmissionsLoading: false,
+      hasSubmissionsError: false,
     };
   },
   created() {
@@ -245,6 +272,8 @@ export default {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
     fetchProblemData() {
+      this.isLoading = true;
+      this.hasError = false;
       const requestBody = {
         problem_id: this.id,
       };
@@ -255,10 +284,17 @@ export default {
           })
           .catch(error => {
             console.error('获取题目信息失败:', error);
+            this.hasError = true;
+            this.problemData = null;
+          })
+          .finally(() => {
+            this.isLoading = false;
           });
     },
     fetchUserProblemSubmissions() {
       this.dialogVisible = true;
+      this.isSubmissionsLoading = true;
+      this.hasSubmissionsError = false;
 
       const userId = this.user.id;
       const problemId = this.problem.id;
@@ -271,14 +307,19 @@ export default {
       };
 
       newRequest.post('/api/submission/filter', filterData)
-        .then(response => {
-          this.submissionRecords = response.submissions;
-          this.dialogVisible = true;
-        })
-        .catch(error => {
-          this.$message.error('获取提交记录失败，请稍后重试！');
-          console.error('获取提交记录错误:', error);
-        });
+          .then(response => {
+            this.submissionRecords = response.submissions || [];
+            this.dialogVisible = true;
+          })
+          .catch(error => {
+            this.$message.error('获取提交记录失败，请稍后重试！');
+            console.error('获取提交记录错误:', error);
+            this.hasSubmissionsError = true;
+            this.submissionRecords = [];
+          })
+          .finally(() => {
+            this.isSubmissionsLoading = false;
+          });
     },
   }
 };
@@ -357,6 +398,22 @@ export default {
   height: 40px;
   margin-top: 20px;
   margin-left: 20px;
+  background: linear-gradient(135deg, #4a5ed0 0%, #4a7ed7 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(74, 94, 208, 0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.goto-button:hover {
+  background: linear-gradient(135deg, #3a4ec0 0%, #3a6ec7 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(74, 94, 208, 0.4);
+}
+
+.goto-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 8px rgba(74, 94, 208, 0.3);
 }
 
 .dialog-content {

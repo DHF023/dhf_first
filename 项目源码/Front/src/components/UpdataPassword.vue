@@ -82,18 +82,21 @@ export default {
       }
     };
   },
-  created() {
-    // 组件创建时初始化原密码
-    this.form.password = this.user.password;
-  },
   methods: {
     // 保存方法
     save(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          // 验证原密码是否正确
+          const md5 = require('md5');
+          if (md5(this.form.password) !== this.user.password) {
+            this.$message.error('原密码输入错误');
+            return;
+          }
+
           // 验证通过，更新用户密码并发送请求
-          this.user.password = this.form.newPassword;
-          request.post("/admin", this.user).then(res => {
+          this.user.password = md5(this.form.newPassword);
+          request.post("/user", this.user).then(res => {
             if (res.code === '0') {
               // 保存成功，显示成功消息并更新本地存储
               this.$message({
@@ -136,6 +139,14 @@ export default {
 .save {
   width: 10%;
   font-size: 16px;
+  background: linear-gradient(90deg, #409EFF, #66B1FF);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.save:hover {
+  background: linear-gradient(90deg, #66B1FF, #409EFF);
+  box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.3);
 }
 
 .divider {

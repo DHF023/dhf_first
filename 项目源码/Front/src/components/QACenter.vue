@@ -40,40 +40,32 @@
 
           <el-divider class="divider"></el-divider>
 
-          <template v-if="showLoadError">
-            <div class="error-tip">
-              <el-alert
-                  title="加载对话列表失败"
-                  type="error"
-                  :closable="false"
-                  show-icon>
-                <span>无法加载对话列表，请<a href="javascript:;" @click="loadConversations">点击重试</a></span>
-              </el-alert>
-            </div>
-          </template>
-
-          <template v-if="!showLoadError && !isLoadingConversations">
-            <div class="batch-actions">
-              <div class="batch-action-container">
-                <el-button
-                    size="small"
-                    @click="toggleBatchMode"
-                    :type="isBatchMode ? 'info' : 'primary'"
-                    plain
-                    class="batch-action-button"
-                >
-                  <i class="el-icon-finished"></i> {{ isBatchMode ? '取消批量' : '批量删除' }}
-                </el-button>
-                <el-button
-                    v-if="isBatchMode"
-                    size="small"
-                    @click="batchDeleteConversations"
-                    type="danger"
-                    class="batch-action-button"
-                >
-                  <i class="el-icon-delete"></i> 删除选中({{ selectedConversations.length }})
-                </el-button>
+          <template v-if="!isLoadingConversations">
+            <div v-if="conversations.length > 0">
+              <div class="conversation-list-container">
+                <div v-for="(conversation, index) in conversations" :key="conversation.id"
+                     class="conversation-item"
+                     @click="isBatchMode ? toggleSelectConversation(index) : loadMessages(index)"
+                     :class="{ active: activeConversation === index }">
+                  <el-avatar :size="32" class="conversation-avatar">C</el-avatar>
+                  <div class="conversation-content">
+                    <div class="conversation-title">{{ conversation.title }}</div>
+                    <div class="conversation-preview">点击查看对话详情</div>
+                    <el-button
+                        v-if="!isBatchMode"
+                        @click.stop="deleteConversation(index)"
+                        class="delete-button"
+                        type="text"
+                        size="mini"
+                    >
+                      <i class="el-icon-delete"></i>
+                    </el-button>
+                  </div>
+                </div>
               </div>
+            </div>
+            <div v-else class="empty-tip">
+              <el-empty description="暂无对话数据"></el-empty>
             </div>
           </template>
           <div v-if="isLoadingConversations" class="conversation-loading">
@@ -81,38 +73,6 @@
               <span></span>
               <span></span>
               <span></span>
-            </div>
-          </div>
-          <div class="conversation-list-container">
-            <div v-for="(conversation, index) in conversationIds" :key="index"
-                 class="conversation-item"
-                 @click="isBatchMode ? toggleSelectConversation(index) : loadMessages(index)"
-                 :class="{
-                   active: activeConversation === index,
-                   'batch-selected': isBatchMode && selectedConversations.includes(conversation)
-                 }">
-              <el-checkbox
-                  v-if="isBatchMode"
-                  v-model="selectedConversations"
-                  :label="conversation"
-                  @click.stop
-                  class="batch-checkbox"
-                  style="margin-right: 8px;"
-              ></el-checkbox>
-              <el-avatar :size="32" class="conversation-avatar">C</el-avatar>
-              <div class="conversation-content">
-                <div class="conversation-title">对话 {{ conversation }}</div>
-                <div class="conversation-preview">点击查看对话详情</div>
-                <el-button
-                    v-if="!isBatchMode"
-                    @click.stop="deleteConversation(index)"
-                    class="delete-button"
-                    type="text"
-                    size="mini"
-                >
-                  <i class="el-icon-delete"></i>
-                </el-button>
-              </div>
             </div>
           </div>
           <el-divider class="divider"></el-divider>
@@ -137,18 +97,18 @@
                     <div class="message-meta">
                       <span>{{ new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
                       <span>
-                      <i class="el-icon-check"></i> 已发送
+                        <i class="el-icon-check"></i> 已发送
 
-                      <el-tooltip content="复制到输入框" placement="top">
-                        <el-button
-                            size="mini"
-                            icon="el-icon-document-copy"
-                            circle
-                            plain
-                            @click="copyToInput(msg.content)"
-                        ></el-button>
-                      </el-tooltip>
-                    </span>
+                        <el-tooltip content="复制到输入框" placement="top">
+                          <el-button
+                              size="mini"
+                              circle
+                              @click="copyToInput(msg.content)"
+                          >
+                            <i class="el-icon-document-copy"></i>
+                          </el-button>
+                        </el-tooltip>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -190,10 +150,24 @@
                 <span></span>
               </div>
             </div>
-
           </div>
 
           <div class="ask-part">
+            <div class="model-selector-container">
+              <el-select
+                  v-model="currentModel"
+                  placeholder="选择AI模型"
+                  size="small"
+                  style="width: 150px; margin-bottom: 10px;"
+                  @change="handleModelChange">
+                <el-option
+                    v-for="model in availableModels"
+                    :key="model.value"
+                    :label="model.label"
+                    :value="model.value">
+                </el-option>
+              </el-select>
+            </div>
             <textarea
                 id="textarea"
                 v-model="textarea"
@@ -215,7 +189,6 @@
 
 <script>
 import newQARequest from '../utils/newQARequest';
-import addSvg from '@/assets/electronics.svg';
 import CodeDisplay from './common/CodeDisplay';
 
 export default {
@@ -232,8 +205,8 @@ export default {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       isSidebarCollapsed: false,
       conversationIds: [],
+      conversations: [],
       messages: [],
-      addSvg,
       isNewDialog: false,
       activeConversation: null,
       isLoading: false,
@@ -241,8 +214,13 @@ export default {
       editContent: '', // 编辑中的内容
       showLoadError: false, // 是否显示加载错误
       selectedConversations: [], // 选中的对话
-      isBatchMode: false, // 是否处于批量选择模式
-      isLoadingConversations: false // 是否正在加载对话列表
+      isLoadingConversations: false, // 是否正在加载对话列表
+    currentModel: 'DeepSeek', // 默认模型
+    availableModels: [
+        { value: 'DeepSeek', label: 'DeepSeek' },
+        { value: 'Qwen', label: '通义千问' },
+        { value: 'Spark', label: '星火大模型' }
+      ]
     }
   },
   mounted() {
@@ -271,7 +249,6 @@ export default {
         return;
       }
 
-      this.showLoadError = false;
       this.isLoadingConversations = true;
 
       newQARequest.get('/conversations', {
@@ -279,21 +256,22 @@ export default {
       }).then(res => {
         console.log('API响应数据:', res.data);
         if (res.data && res.data.length > 0) {
-          this.conversationIds = res.data.map(c => c.id);
-          console.log('加载的对话ID列表:', this.conversationIds);
-          if(loadFirst) {
+          this.conversations = res.data.map(item => ({
+            id: item.id,
+            title: item.title || `对话 ${item.id}`
+          }));
+          console.log('加载的对话列表:', this.conversations);
+          if(loadFirst && this.conversations.length > 0) {
             this.loadMessages(0);
             this.activeConversation = 0;
           }
         } else {
           console.log('API返回空对话列表');
-          this.conversationIds = [];
+          this.conversations = [];
         }
       }).catch(err => {
         console.error("获取对话列表失败:", err);
-        this.$message.error('获取对话列表失败，请检查网络连接');
-        this.showLoadError = true;
-        this.conversationIds = [];
+        this.conversations = [];
       }).finally(() => {
         this.isLoadingConversations = false;
       });
@@ -302,9 +280,12 @@ export default {
       const userId = this.user.id;
       newQARequest.post('/conversations', {user_id: userId})
           .then(res => {
-            const newConversationId = res.data.conversation_id;
-            this.conversationIds.push(newConversationId);
-            const newIndex = this.conversationIds.length - 1;
+            const newConversation = {
+              id: res.data.conversation_id,
+              title: `新对话 ${res.data.conversation_id}`
+            };
+            this.conversations.push(newConversation);
+            const newIndex = this.conversations.length - 1;
             this.loadMessages(newIndex); // 加载新创建的对话的消息
             this.activeConversation = newIndex;
           }).catch(err => {
@@ -313,7 +294,7 @@ export default {
     },
     loadMessages(index) {
       this.activeConversation = index;
-      const conversationId = this.conversationIds[index];  // 获取对应对话ID
+      const conversationId = this.conversations[index].id;  // 获取对应对话ID
       newQARequest.get('/messages', {
         params: {conversation_id: conversationId}
       }).then(res => {
@@ -341,7 +322,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        const conversationId = this.conversationIds[index];
+        const conversationId = this.conversations[index].id;
         newQARequest.delete(`/conversations/${conversationId}`)
             .then(res => {
               this.$message.success('删除成功');
@@ -365,6 +346,18 @@ export default {
           });
         }
       });
+    },
+
+    handleModelChange(model) {
+      this.currentModel = model;
+      const modelName = this.availableModels.find(m => m.value === model)?.label || model;
+      this.$message.success(`已切换至 ${modelName}`);
+      localStorage.setItem('preferredModel', model);
+
+      // 可以在这里添加模型切换后的额外逻辑
+      if (this.activeConversation !== null) {
+        this.loadMessages(this.activeConversation);
+      }
     },
     promote() {
       const userId = this.user.id;
@@ -409,8 +402,67 @@ export default {
     },
 
     formatAIResponse(content) {
-      // 临时简化处理，直接返回原始内容用于测试
-      return content.replace(/\n/g, '<br>');
+      // 处理分割线
+      let formatted = content.replace(/^---$/gm, '<hr style="border-top: 1px dashed #ccc; margin: 16px 0;">');
+
+      // 处理标题
+      formatted = formatted.replace(/^### (.*$)/gm, '<h3 style="font-size:1.2em;margin:16px 0 8px;">$1</h3>');
+      formatted = formatted.replace(/^#### (.*$)/gm, '<h4 style="font-size:1.1em;margin:12px 0 6px;">$1</h4>');
+
+      // 处理表格
+      formatted = formatted.replace(/^\|([^\n]*\|[^\n]*)\n\|\s*[-:]+\s*(?:\|[-\s:]+)*\s*\|\n((?:\|.*\|\n?)+)/gm, (match, header, body) => {
+        // 处理表头
+        const headers = header.split('|')
+          .map(h => h.trim())
+          .filter(h => h.length > 0);
+
+        // 处理表格内容
+        const rows = body.split('\n')
+          .filter(row => row.trim().length > 0)
+          .map(row => {
+            return row.split('|')
+              .map(cell => cell.trim())
+              .filter((cell, i) => i > 0 && i < headers.length + 1); // 跳过首尾空列
+          });
+
+        // 构建HTML表格
+        let html = `<table style="width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #ddd;">`;
+
+        // 添加表头
+        html += `<thead><tr>`;
+        headers.forEach(header => {
+          html += `<th style="padding:8px;border:1px solid #ddd;text-align:center;background:#f5f5f5;">${header}</th>`;
+        });
+        html += `</tr></thead>`;
+
+        // 添加表格内容
+        html += `<tbody>`;
+        rows.forEach(row => {
+          html += `<tr>`;
+          row.forEach(cell => {
+            html += `<td style="padding:8px;border:1px solid #ddd;">${cell}</td>`;
+          });
+          html += `</tr>`;
+        });
+        html += `</tbody></table>`;
+
+        return html;
+      });
+
+      // 处理列表项
+      formatted = formatted.replace(/^· (.*$)/gm, '<li style="margin-left:20px;">$1</li>');
+      formatted = formatted.replace(/^  - /gm, '<li style="margin-left:30px;list-style-type:circle;">');
+
+      // 处理加粗文本
+      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+      // 处理代码标记
+      formatted = formatted.replace(/`(.*?)`/g, '<span class="formula-text">$1</span>');
+
+      // 处理换行
+      formatted = formatted.replace(/\n/g, '<br>');
+
+      return formatted;
     },
     parseMessage(content) {
       const parts = [];
@@ -447,62 +499,28 @@ export default {
       this.isSidebarCollapsed = !this.isSidebarCollapsed;
     },
 
-    toggleBatchMode() {
-      this.isBatchMode = !this.isBatchMode;
-      if (!this.isBatchMode) {
-        this.selectedConversations = [];
-      }
-    },
-
-    toggleSelectConversation(index) {
-      const conversationId = this.conversationIds[index];
-      const selectedIndex = this.selectedConversations.indexOf(conversationId);
-      if (selectedIndex === -1) {
-        this.selectedConversations.push(conversationId);
-      } else {
-        this.selectedConversations.splice(selectedIndex, 1);
-      }
-    },
-
-    batchDeleteConversations() {
-      if (this.selectedConversations.length === 0) {
-        this.$message.warning('请至少选择一个对话');
-        return;
-      }
-
-      this.$confirm(`确定要删除选中的${this.selectedConversations.length}个对话吗?`, '批量删除确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const deletePromises = this.selectedConversations.map(conversationId => {
-          return newQARequest.delete(`/conversations/${conversationId}`)
-              .catch(err => {
-                console.error(`删除对话${conversationId}失败:`, err);
-                return Promise.reject(err);
-              });
-        });
-
-        Promise.all(deletePromises)
-            .then(() => {
-              this.$message.success(`成功删除${this.selectedConversations.length}个对话`);
-              this.loadConversations();
-              this.isBatchMode = false;
-              this.selectedConversations = [];
-            })
-            .catch(() => {
-              this.$message.error('部分对话删除失败，请重试');
-              this.loadConversations();
-            });
-      }).catch(() => {
-        this.$message.info('已取消批量删除');
-      });
-    },
   }
 }
 </script>
 
 <style scoped>
+.formula-text {
+  font-family: 'Courier New', monospace;
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+
+.el-button .el-icon-document-copy {
+  color: #000000;
+  font-size: 14px;
+}
+.el-button .el-icon-delete {
+  color: #000000;
+  font-size: 14px;
+}
+
 .center {
   height: calc(100vh - 60px);
   max-height: calc(100vh - 60px);
@@ -540,7 +558,8 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0;
+  gap: 30px;
+  padding: 20px 0 10px;
 }
 
 .answer-part {
@@ -551,10 +570,10 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
   width: 100%;
   flex: 1;
-  min-height: 450px;
-  margin: 20px 0 15px 0;
+  min-height: 60vh;
+  max-height: calc(100vh - 250px);
   overflow: hidden;
-  padding: 20px 0 10px 16px;
+  padding: 20px 0 20px 16px;
 }
 
 .ask-part {
@@ -562,13 +581,30 @@ export default {
   width: 100%;
   height: auto;
   min-height: 120px;
+  max-height: 30vh;
   padding: 16px;
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-top: 16px;
   border: 1px solid #e0f0ff;
   transition: border-color 0.2s ease;
+}
+
+@media (max-height: 800px) {
+  .answer-part {
+    min-height: 55vh;
+    margin: 5px 0;
+  }
+  .ask-part {
+    min-height: 100px;
+    margin: 20px 0;
+  }
+}
+
+@media (max-height: 600px) {
+  .answer-part {
+    min-height: 50vh;
+  }
 }
 
 .ask-part:focus-within {
@@ -579,11 +615,33 @@ export default {
   width: 100%;
   padding: 0;
   overflow-y: auto;
-  max-height: calc(100vh - 300px);
-  scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 transparent;
+  height: calc(100% - 20px);
+  max-height: 49vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: none;
 }
 
+.answer-container::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.answer-container::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.answer-container:hover::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+}
+
+@media (max-height: 800px) {
+  .answer-container {
+    height: calc(100% - 10px);
+  }
+}
 
 .answer-container::-webkit-scrollbar {
   width: 6px;
@@ -655,6 +713,12 @@ textarea {
   color: white;
   font-weight: 500;
   letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #4a5ed0 0%, #5585d7 50%, #4a5ed0 100%);
+  background-size: 200% 100%;
+}
+
+.add-button-open:hover {
+  background-position: 100% 0;
 }
 
 .add-button-open:hover {
@@ -712,10 +776,15 @@ textarea {
   bottom: 16px;
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, #4a5ed0 0%, #5585d7 100%);
+  background: linear-gradient(135deg, #4a5ed0 0%, #5585d7 50%, #4a5ed0 100%);
   border: none;
   box-shadow: 0 2px 8px rgba(74, 94, 208, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background-size: 200% 100%;
+}
+
+.promotion-button:hover {
+  background-position: 100% 0;
 }
 
 .promotion-button:hover {
@@ -741,10 +810,12 @@ textarea {
 
 .message-container-user {
   display: flex;
-  margin: 24px 0;
+  margin: 0;
   padding: 16px 24px;
   background-color: #ffffff;
   border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
   max-width: 85%;
@@ -765,10 +836,12 @@ textarea {
 
 .message-container-ai {
   display: flex;
-  margin: 24px 0;
+  margin: 0;
   padding: 16px 24px;
   background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
   border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
   max-width: 85%;
@@ -1043,7 +1116,7 @@ textarea {
   transform: translateY(-50%);
   display: none;
   padding: 4px;
-  color: #c0c4cc;
+  color: #000000;
   transition: all 0.3s;
   background: none;
   border: none;
@@ -1070,6 +1143,15 @@ textarea {
 
 .batch-action-button {
   flex: 1;
+  background: linear-gradient(135deg, #4a5ed0 0%, #5585d7 50%, #4a5ed0 100%);
+  background-size: 200% 100%;
+  color: white;
+  border: none;
+}
+
+.batch-action-button:hover {
+  background-position: 100% 0;
+  color: white;
 }
 
 .batch-action-button:hover {

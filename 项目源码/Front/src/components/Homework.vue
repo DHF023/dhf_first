@@ -2,25 +2,40 @@
   <!-- 作业组件的模板部分 -->
   <div class="homework">
     <div class="main">
-      <div class="toolbar">
-        <el-button class="new-homework-btn" round @click="openNewHomeworkPage" v-if="user.role === '教师' || user.role === 'ROLE_ADMIN'">
+      <div class="toolbar" v-if="isTeacherOrAdmin">
+        <el-button class="new-homework-btn" round @click="openNewHomeworkPage">
           <span class="new-homework-text">新建作业</span>
-        </el-button>
-
-        <el-button class="homework-repository-btn" round @click="toggleHomeworkList">
-          <span class="homework-repository-text">作业库</span>
         </el-button>
       </div>
       <el-divider class="divider"></el-divider>
 
       <div style="display: flex; justify-content: center;">
-        <div class="homework-list" v-if="showHomeworkList">
-          <el-table :data="homeworkList" style="width: 100%" border height="400">
+        <div class="homework-list">
+          <template v-if="homeworkList.length > 0">
+            <el-table
+              :data="homeworkList"
+              style="width: 100%"
+              border
+              height="400"
+              v-loading="loading"
+              element-loading-text="加载中..."
+              element-loading-spinner="el-icon-loading"
+            >
             <el-table-column prop="title" label="作业标题" width="180"></el-table-column>
             <el-table-column prop="description" label="作业描述"></el-table-column>
             <el-table-column prop="startTime" label="开始时间" width="180"></el-table-column>
             <el-table-column prop="endTime" label="结束时间" width="180"></el-table-column>
+            <el-table-column label="操作" width="120">
+              <template slot-scope="scope">
+                <el-button @click="viewHomework(scope.row.id)" type="text">查看</el-button>
+              </template>
+            </el-table-column>
           </el-table>
+          </template>
+
+          <div v-if="!loading && homeworkList.length === 0" class="empty-tip">
+            <el-empty description="暂无作业数据"></el-empty>
+          </div>
         </div>
       </div>
     </div>
@@ -28,13 +43,44 @@
 </template>
 
 <script>
-// 作业组件的脚本部分
+import newRequest from '@/utils/newRequest'
+import { debounce } from 'lodash'
+
+// API端点常量
+const API_ENDPOINTS = {
+  FILTER_HOMEWORKS: '/api/homework/filter',
+  GET_HOMEWORK_DETAIL: '/api/homework/show',
+  SUBMIT_HOMEWORK: '/api/homework/submit'
+}
+
+// 角色常量
+const ROLES = {
+  TEACHER: 'ROLE_TEACHER',
+  ADMIN: 'ROLE_ADMIN'
+}
+
 export default {
+  name: 'Homework',
+  created() {
+    this.fetchHomeworks = debounce(this._fetchHomeworks, 300)
+  },
+
+  computed: {
+    isTeacherOrAdmin() {
+      return this.user.role === ROLES.TEACHER || this.user.role === ROLES.ADMIN
+    }
+  },
+
   data() {
     return {
-      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}, // 用户信息
-      showHomeworkList: false, // 控制作业列表显示状态
-      homeworkList: [] // 作业列表数据
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+      homeworkList: [],
+      loading: false,
+      error: null,
+      searchTitle: '',
+      currentHomework: null,
+      showHomeworkDialog: false,
+      isStudentSubmitted: false
     };
   },
   methods: {
@@ -42,12 +88,73 @@ export default {
     openNewHomeworkPage() {
       window.open(this.$router.resolve({ name: 'NewHomeworkPage' }).href, '_blank');
     },
-    // 切换作业列表显示状态
-    toggleHomeworkList() {
-      this.showHomeworkList = !this.showHomeworkList;
+    async _fetchHomeworks() {
+      this.loading = true
+      this.error = null
+      try {
+        const params = {
+          title: this.searchTitle,
+          holder_name: this.user?.name || ''
+        }
+        const res = await this.$_apiRequest(API_ENDPOINTS.FILTER_HOMEWORKS, 'post', params)
+        this.homeworkList = res.data
+      } catch (error) {
+        this.error = this.$_handleError(error, '获取作业列表失败')
+        this.homeworkList = []
+      } finally {
+        this.loading = false
+      }
+    },
+    async viewHomework(id) {
+      try {
+        const res = await this.$_apiRequest(`${API_ENDPOINTS.GET_HOMEWORK_DETAIL}/${id}`)
+        this.currentHomework = res.data
+        this.showHomeworkDialog = true
+        this.isStudentSubmitted = res.data.student_record !== null
+      } catch (error) {
+        this.$_handleError(error, '获取作业详情失败')
+      }
+    },
+    async submitHomework() {
+      try {
+        const answerList = Object.keys(this.answers).map(questionId => ({
+          question_id: parseInt(questionId),
+          answer: this.answers[questionId]
+        }))
+        const res = await this.$_apiRequest(
+          `${API_ENDPOINTS.SUBMIT_HOMEWORK}/${this.currentHomework.id}`,
+          'post',
+          { answer_list: answerList }
+        )
+        if (res.data.success) {
+          this.$message.success('作业提交成功')
+          this.isStudentSubmitted = true
+          this.viewHomework(this.currentHomework.id)
+        }
+      } catch (error) {
+        this.$_handleError(error, '提交作业失败')
+      }
+    },
+    async $_apiRequest(url, method = 'get', data = null) {
+      try {
+        const config = { method, url }
+        if (data) {
+          config.data = data
+        }
+        const res = await newRequest(config)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    $_handleError(error, defaultMessage) {
+      console.error(`${defaultMessage}:`, error)
+      const message = error.response?.data?.message || error.message || defaultMessage
+      this.$message.error(message)
+      return message
     }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -114,5 +221,17 @@ export default {
 .homework-list {
   width: 90%;
   padding-top: 20px;
+  min-height: 400px;
+  position: relative;
+}
+
+.empty-tip {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* 添加动画效果 */
+.el-table__body-wrapper {
+  transition: opacity 0.3s ease;
 }
 </style>

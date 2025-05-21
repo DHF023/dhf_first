@@ -41,8 +41,12 @@
             <el-menu-item index="/examination">
               <span slot="title">考试</span>
             </el-menu-item>
+            <!-- 课程菜单项 -->
+            <el-menu-item index="/courses">
+              <span slot="title">课程</span>
+            </el-menu-item>
             <!-- 仅当用户角色为管理员时显示用户管理菜单项 -->
-            <el-menu-item index="/admin" v-if="user.role === 'ROLE_ADMIN'">
+            <el-menu-item index="/user" v-if="user.role === 'ROLE_ADMIN'">
               <span slot="title">用户管理</span>
             </el-menu-item>
           </el-menu>
@@ -53,15 +57,23 @@
           <!-- 全局搜索框 -->
           <div class="search-box" :class="{ 'search-box-expanded': isSearching }">
             <i class="el-icon-search search-icon" @click="toggleSearchByIcon"></i>
-            <el-input
+            <el-autocomplete
                 v-show="isSearching"
-                placeholder="请输入搜索内容"
                 v-model="searchQuery"
+                :fetch-suggestions="querySearch"
+                placeholder="请输入搜索内容(题目/比赛/课程)"
                 clearable
-                @keyup.enter.native="handleSearch"
+                @select="handleSelect"
                 ref="searchBox"
-                style="padding-left: 30px;"
-            ></el-input>
+                style="padding-left: 30px; width: 300px;"
+            >
+              <template slot-scope="{ item }">
+                <div class="search-result-item">
+                  <span class="result-type">{{ item.type }}</span>
+                  <span class="result-title">{{ item.title }}</span>
+                </div>
+              </template>
+            </el-autocomplete>
           </div>
 
         <!-- 其他功能区域 -->
@@ -95,6 +107,9 @@
 </template>
 
 <script>
+import newRequest from '@/utils/newRequest';
+import request from '@/utils/request';
+
 export default {
   name: 'Layout',
   data () {
@@ -103,6 +118,7 @@ export default {
       user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
       isSearching: false, // 控制搜索框的显示状态
       searchQuery: '',
+      searchResults: []
     }
   },
   computed: {
@@ -156,12 +172,107 @@ export default {
         }
       }
     },
-    // 处理搜索
-    handleSearch() {
-      if (this.searchQuery.trim() !== '') {
-        this.$router.push({ path: '/search', query: { q: this.searchQuery } });
-      } else {
-        this.$message('请输入搜索内容');
+    // 搜索建议查询
+    async querySearch(queryString, cb) {
+      if (!queryString.trim()) {
+        cb([]);
+        return;
+      }
+
+      try {
+        // 调用API搜索题目、比赛和课程
+        const [problems, contests, courses] = await Promise.all([
+          this.searchProblems(queryString),
+          this.searchContests(queryString),
+          this.searchCourses(queryString)
+        ]);
+
+        // 合并结果并添加类型标识
+        const results = [
+          ...problems.map(p => ({...p, type: '题目'})),
+          ...contests.map(c => ({...c, type: '比赛'})),
+          ...courses.map(c => ({...c, type: '课程'}))
+        ];
+
+        cb(results);
+      } catch (error) {
+        console.error('搜索出错:', error);
+        cb([]);
+      }
+    },
+
+    // 搜索题目
+    async searchProblems(query) {
+      try {
+        const response = await newRequest.get('/api/problem/search', {
+          params: { q: query }
+        });
+        return response.data.map(p => ({
+          value: p.title,
+          title: p.title,
+          id: p.id,
+          path: `/problem/${p.id}`
+        }));
+      } catch (error) {
+        console.error('搜索题目出错:', error);
+        return [];
+      }
+    },
+
+    // 搜索比赛
+    async searchContests(query) {
+      try {
+        const response = await newRequest.get('/api/contest/search', {
+          params: { q: query }
+        });
+        return response.data.map(c => ({
+          value: c.contest_title,
+          title: c.contest_title,
+          id: c.contest_id,
+          path: `/competition/${c.contest_id}`
+        }));
+      } catch (error) {
+        console.error('搜索比赛出错:', error);
+        return [];
+      }
+    },
+
+    // 搜索课程
+    async searchCourses(query) {
+      try {
+        const response = await request.get('/api/course/search', {
+          params: { q: query }
+        });
+        return response.data.map(c => ({
+          value: c.course_name,
+          title: c.course_name,
+          id: c.course_id,
+          path: `/course/${c.course_id}`
+        }));
+      } catch (error) {
+        console.error('搜索课程出错:', error);
+        return [];
+      }
+    },
+
+    // 处理选择搜索结果
+    handleSelect(item) {
+      if (item && item.path) {
+        this.$router.push(item.path);
+        this.isSearching = false;
+        this.searchQuery = '';
+      }
+    },
+
+    // 处理回车键搜索
+    handleEnterSearch() {
+      if (this.searchQuery.trim()) {
+        this.$router.push({
+          path: '/search',
+          query: { q: this.searchQuery }
+        });
+        this.isSearching = false;
+        this.searchQuery = '';
       }
     },
   },
@@ -215,7 +326,7 @@ export default {
 }
 
 .search-box-expanded {
-  width: 400px;
+  width: 300px;
   border: 1px solid #dcdfe6;
   border-radius: 20px;
 }
@@ -240,6 +351,29 @@ export default {
 .search-box .el-input input {
   padding-left: 30px;
   box-sizing: border-box;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.result-type {
+  display: inline-block;
+  padding: 0 8px;
+  background-color: #409EFF;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-right: 10px;
+}
+
+.result-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-icon {

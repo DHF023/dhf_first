@@ -33,11 +33,11 @@
               @keyup.enter.native="handleInputConfirm"
               @blur="handleInputConfirm"
           ></el-input>
-          <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 新标签</el-button>
+          <el-button v-else class="button-new-tag" size="small" @click="showInput"><span style="color: #333 !important;">+ 新标签</span></el-button>
         </el-form-item>
         <div class="form-buttons">
           <el-button type="primary" @click="showConfirmDialog">提交</el-button>
-          <el-button @click="resetForm">重置</el-button>
+          <el-button @click="resetForm"><span style="color: #333 !important;">重置</span></el-button>
         </div>
       </el-form>
     </div>
@@ -48,7 +48,7 @@
     >
       <span>您确定要修改这道题目吗？</span>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false"><span style="color: #333">取消</span></el-button>
         <el-button type="primary" @click="confirmSubmit">确定</el-button>
       </span>
     </el-dialog>
