@@ -213,19 +213,30 @@
         </div>
       </div>
     </div>
+    <confirm-dialog
+      ref="confirmDialog"
+      title="删除题目确认"
+      message="确定要删除这个题目吗？"
+      :on-confirm="() => deleteProblem(currentProblemId)"
+    />
   </div>
 </template>
 
 <script>
 import newRequest from '@/utils/newRequest';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 // 题目列表组件脚本
 export default {
+  components: {
+    ConfirmDialog
+  },
   data() {
     return {
       problems: [], // 题目列表
       total: 0, // 题目总数
       loading: false, // 加载状态
+      currentProblemId: null, // 当前要删除的题目ID
       hotTags: [
         { name: '动态规划', count: 56, type: '' },
         { name: '树结构', count: 42, type: 'success' },
@@ -407,41 +418,32 @@ export default {
 
     // 确认删除题目
     confirmDeleteProblem(problemId) {
-      this.$confirm('确定要删除这个题目吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.deleteProblem(problemId);
-      }).catch(() => {
-        this.$message.info('已取消删除');
-      });
+      this.$refs.confirmDialog.show();
+      this.currentProblemId = problemId;
     },
 
     // 删除题目
-    deleteProblem(problemId) {
+    async deleteProblem(problemId) {
       this.loading = true;
-      newRequest.post(`/api/questions/delete/${problemId}`)
-          .then(response => {
-            console.log(response);
-            this.$message.success('删除成功');
-            this.fetchAllProblems(); // 刷新题目列表
-          })
-          .catch(error => {
-            console.error('删除题目失败:', error);
-            if (error.response) {
-              if (error.response.status === 404) {
-                this.$message.error('题目不存在或已被删除');
-              } else {
-                this.$message.error(`删除失败: ${error.response.data.message || '服务器错误'}`);
-              }
-            } else {
-              this.$message.error('网络错误，请检查连接后重试');
-            }
-          })
-          .finally(() => {
-            this.loading = false;
-          });
+      try {
+        await newRequest.post(`/api/questions/delete/${problemId}`);
+        this.$message.success('删除成功');
+        this.fetchAllProblems(); // 刷新题目列表
+      } catch (error) {
+        console.error('删除题目失败:', error);
+        if (error.response) {
+          if (error.response.status === 404) {
+            this.$message.error('题目不存在或已被删除');
+          } else {
+            this.$message.error(`删除失败: ${error.response.data.message || '服务器错误'}`);
+          }
+        } else {
+          this.$message.error('网络错误，请检查连接后重试');
+        }
+        throw error; // 抛出错误供ConfirmDialog处理
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };

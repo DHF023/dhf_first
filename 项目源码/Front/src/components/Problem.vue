@@ -119,6 +119,7 @@
         </el-tabs>
       </div>
     </div>
+
     <el-dialog
         title="提交记录"
         :visible.sync="dialogVisible"

@@ -41,24 +41,23 @@
         </div>
       </el-form>
     </div>
-    <el-dialog
+    <confirm-dialog
+        ref="confirmDialog"
         title="确认修改题目"
-        :visible.sync="dialogVisible"
-        width="30%"
-    >
-      <span>您确定要修改这道题目吗？</span>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false"><span style="color: #333">取消</span></el-button>
-        <el-button type="primary" @click="confirmSubmit">确定</el-button>
-      </span>
-    </el-dialog>
+        message="您确定要修改这道题目吗？"
+        :on-confirm="confirmSubmit"
+    />
   </div>
 </template>
 
 <script>
 import newRequest from '@/utils/newRequest';
+import ConfirmDialog from './common/ConfirmDialog.vue';
 
 export default {
+  components: {
+    ConfirmDialog
+  },
   data() {
     return {
       problemForm: {
@@ -71,7 +70,6 @@ export default {
       inputVisible: false,
       inputValue: '',
       problemId: this.$route.params.problemId, // 当前题目ID，从路由参数获取
-      dialogVisible: false,
       isSubmitting: false,
     };
   },
@@ -145,7 +143,7 @@ export default {
       // 显示确认对话框
       this.$refs.problemForm.validate(valid => {
         if (valid) {
-          this.dialogVisible = true;
+          this.$refs.confirmDialog.show();
         } else {
           this.$message.error('请填写完整的题目信息');
         }

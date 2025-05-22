@@ -19,7 +19,7 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="addUserDialogVisible = false">取消</el-button>
+        <el-button @click="addUserDialogVisible = false"><span style="color: #333333">取消</span></el-button>
         <el-button type="primary" @click="addUser">确定</el-button>
       </div>
     </el-dialog>

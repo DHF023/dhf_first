@@ -66,6 +66,12 @@
             </div>
             <div v-else class="empty-tip">
               <el-empty description="暂无对话数据"></el-empty>
+              <confirm-dialog
+                ref="deleteDialog"
+                title="删除对话确认"
+                message="确定要删除这个对话吗？"
+                :on-confirm="confirmDeleteConversation"
+              />
             </div>
           </template>
           <div v-if="isLoadingConversations" class="conversation-loading">
@@ -190,11 +196,13 @@
 <script>
 import newQARequest from '../utils/newQARequest';
 import CodeDisplay from './common/CodeDisplay';
+import ConfirmDialog from './common/ConfirmDialog';
 
 export default {
   name: 'qa-center',
   components: {
-    CodeDisplay
+    CodeDisplay,
+    ConfirmDialog
   },
   data() {
     return {
@@ -215,12 +223,13 @@ export default {
       showLoadError: false, // 是否显示加载错误
       selectedConversations: [], // 选中的对话
       isLoadingConversations: false, // 是否正在加载对话列表
-    currentModel: 'DeepSeek', // 默认模型
-    availableModels: [
+      currentModel: 'DeepSeek', // 默认模型
+      availableModels: [
         { value: 'DeepSeek', label: 'DeepSeek' },
         { value: 'Qwen', label: '通义千问' },
         { value: 'Spark', label: '星火大模型' }
-      ]
+      ],
+      deletingIndex: null // 当前正在删除的对话索引
     }
   },
   mounted() {
@@ -317,24 +326,21 @@ export default {
       });
     },
     deleteConversation(index) {
-      this.$confirm('确定要删除这个对话吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const conversationId = this.conversations[index].id;
-        newQARequest.delete(`/conversations/${conversationId}`)
-            .then(res => {
-              this.$message.success('删除成功');
-              this.loadConversations(true);
-            })
-            .catch(err => {
-              console.error("删除失败:", err);
-              this.$message.error('删除失败: ' + (err.response?.data?.message || err.message));
-            });
-      }).catch(() => {
-        this.$message.info('已取消删除');
-      });
+      this.deletingIndex = index;
+      this.$refs.deleteDialog.show();
+    },
+
+    confirmDeleteConversation() {
+      const conversationId = this.conversations[this.deletingIndex].id;
+      newQARequest.delete(`/conversations/${conversationId}`)
+          .then(res => {
+            this.$message.success('删除成功');
+            this.loadConversations(true);
+          })
+          .catch(err => {
+            console.error("删除失败:", err);
+            this.$message.error('删除失败: ' + (err.response?.data?.message || err.message));
+          });
     },
     scrollToBottom() {
       this.$nextTick(() => {

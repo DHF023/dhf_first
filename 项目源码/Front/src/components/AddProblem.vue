@@ -7,37 +7,30 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="手动添加" name="manual">
           <el-form :model="problemForm" ref="problemForm" label-width="120px">
-            <!-- 题目标题输入框 -->
             <el-form-item label="题目标题" prop="title" :rules="{ required: true, message: '题目标题不能为空' }">
               <el-input v-model="problemForm.title" placeholder="请输入题目名称"></el-input>
             </el-form-item>
 
-            <!-- 时间限制输入框 -->
             <el-form-item label="时间限制(ms)" prop="time_limit" :rules="{ required: true, type: 'number', message: '时间限制必须为数字' }">
               <el-input v-model.number="problemForm.time_limit"></el-input>
             </el-form-item>
 
-            <!-- 内存限制输入框 -->
             <el-form-item label="内存限制(MB)" prop="memory_limit" :rules="{ required: true, type: 'number', message: '内存限制必须为数字' }">
               <el-input v-model.number="problemForm.memory_limit"></el-input>
             </el-form-item>
 
-            <!-- 难度输入框 -->
             <el-form-item label="难度" prop="difficulty" :rules="{ required: true, type: 'number', message: '难度必须为数字' }">
               <el-input v-model.number="problemForm.difficulty"></el-input>
             </el-form-item>
 
-            <!-- 是否公开开关 -->
             <el-form-item label="是否公开">
               <el-switch v-model="problemForm.is_public"></el-switch>
             </el-form-item>
 
-            <!-- 题目描述输入框 -->
             <el-form-item label="题目描述" prop="statement" :rules="{ required: true, message: '题目描述不能为空' }">
               <el-input type="textarea" v-model="problemForm.statement" placeholder="请输入题目描述"></el-input>
             </el-form-item>
 
-            <!-- 标签输入和显示区域 -->
             <el-form-item label="标签">
               <el-tag
                   v-for="tag in problemForm.tags"
@@ -57,7 +50,6 @@
             </el-form-item>
           </el-form>
 
-          <!-- 表单操作按钮 -->
           <div class="form-buttons">
             <el-button type="primary" @click="showConfirmDialog">提交</el-button>
             <el-button @click="resetForm('problemForm')"><span style="color: #333 !important;">重置</span></el-button>
@@ -145,19 +137,12 @@
     </div>
 
     <!-- 确认对话框 -->
-    <el-dialog
-        title="确认添加题目"
-        :visible.sync="dialogVisible"
-        width="30%"
-        :before-close="handleDialogClose"
-    >
-      <span>您确定要添加这道题目吗？</span>
-      <span>认真检查填写的题目信息哦！</span>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmSubmit">确认</el-button>
-      </span>
-    </el-dialog>
+    <confirm-dialog
+      ref="confirmAddDialog"
+      title="确认添加题目"
+      message="您确定要添加这道题目吗？认真检查填写的题目信息哦！"
+      :on-confirm="confirmSubmit"
+    />
   </div>
 </template>
 
@@ -165,10 +150,12 @@
 import newRequest from '@/utils/newRequest';
 import * as mammoth from 'mammoth';
 import ProblemTable from './common/ProblemTable.vue';
+import ConfirmDialog from './common/ConfirmDialog.vue';
 
 export default {
   components: {
-    ProblemTable
+    ProblemTable,
+    ConfirmDialog
   },
   data() {
     return {
@@ -187,9 +174,7 @@ export default {
       },
       inputVisible: false, // 控制新标签输入框的显示
       inputValue: '', // 新标签输入框的值
-      addedProblems: [], // 已添加的题目列表
       user: JSON.parse(localStorage.getItem('user')) || {}, // 当前用户信息
-      dialogVisible: false, // 确认对话框的显示状态
     };
   },
   methods: {
@@ -492,24 +477,6 @@ export default {
       this.problemsManual = [];
     },
 
-    // 处理题目编辑
-    handleEditProblem(problem) {
-      this.$prompt('请输入标签，多个标签用逗号分隔', '编辑题目标签', {
-        inputValue: problem.tags.join(','),
-        inputValidator: (value) => {
-          if (!value || value.trim() === '') {
-            return '标签不能为空';
-          }
-          return true;
-        }
-      }).then(({ value }) => {
-        problem.tags = value.split(',').map(tag => tag.trim());
-        this.$message.success('标签修改成功');
-      }).catch(() => {
-        this.$message.info('已取消编辑');
-      });
-    },
-
     // 保存所有修改
     handleSaveAllProblems(problems) {
       this.parsedProblems = problems;
@@ -517,21 +484,6 @@ export default {
     },
 
     // 批量删除题目
-    handleBatchRemove(selectedProblems) {
-      this.$confirm(`确定要删除选中的 ${selectedProblems.length} 道题目吗？`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const problemIds = selectedProblems.map(p => p.id || p.tempId);
-        this.parsedProblems = this.parsedProblems.filter(
-            p => !problemIds.includes(p.id || p.tempId)
-        );
-        this.$message.success(`成功删除 ${selectedProblems.length} 道题目`);
-      }).catch(() => {
-        this.$message.info('已取消删除');
-      });
-    },
 
     // 提交智能导入的题目
     async submitParsedProblems() {
@@ -599,19 +551,14 @@ export default {
     showConfirmDialog() {
       this.$refs.problemForm.validate(valid => {
         if (valid) {
-          this.dialogVisible = true;
+          this.$refs.confirmAddDialog.show();
         } else {
           this.$message.error('请填写完整的题目信息');
         }
       });
     },
     confirmSubmit() {
-      this.dialogVisible = false;
       this.submitForm('problemForm');
-    },
-    handleDialogClose(done) {
-      this.dialogVisible = false;
-      done();
     },
 
     // 下载模板文件

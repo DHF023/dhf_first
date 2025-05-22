@@ -90,8 +90,8 @@
           placeholder="请输入比赛详细信息"
           rows="4"></el-input>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="clearInfo">清空</el-button>
-        <el-button @click="showInfoDialog = false">取消</el-button>
+        <el-button @click="clearInfo"><span style="color: #333333">清空</span></el-button>
+        <el-button @click="showInfoDialog = false"><span style="color: #333333">取消</span></el-button>
         <el-button type="primary" @click="saveInfo">保存</el-button>
       </span>
     </el-dialog>
@@ -102,7 +102,7 @@
       <span>您确定要创建这场比赛吗？</span><br>
       <span>请确认输入内容的正确哦！</span>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="showConfirmDialog = false">取消</el-button>
+        <el-button @click="showConfirmDialog = false"><span style="color: #333333">取消</span></el-button>
         <el-button type="primary" @click="confirmCreateCompetition">确认</el-button>
       </span>
     </el-dialog>

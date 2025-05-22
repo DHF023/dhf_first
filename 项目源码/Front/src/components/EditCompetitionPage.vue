@@ -69,7 +69,7 @@
         placeholder="请输入比赛详细信息"
         rows="4"></el-input>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="showInfoDialog = false">取消</el-button>
+        <el-button @click="showInfoDialog = false"><span style="color: #333333">取消</span></el-button>
         <el-button type="primary" @click="saveInfoDialog">保存</el-button>
       </span>
     </el-dialog>

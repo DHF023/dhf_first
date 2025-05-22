@@ -24,12 +24,6 @@
         </el-col>
       </el-row>
     </div>
-
-    <el-dialog title="添加课程" :visible.sync="showAddDialog" width="50%">
-      <div>
-        <p>添加课程功能暂未实现</p>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
